@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Funcionario - Gobierno de San Andreas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #34495e;
+            margin: 0;
+            overflow: hidden;
+        }
+        .register-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 350px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        h1 {
+            color: #333;
+            font-size: 22px;
+            margin-bottom: 20px;
+        }
+        .step {
+            display: none;
+            width: 100%;
+        }
+        .step.active {
+            display: block;
+        }
+        /* Animations */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutLeft {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-100%); opacity: 0; }
+        }
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        input[type="text"], input[type="password"], input[type="file"], select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        button {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #c0392b;
+        }
+        button.secondary {
+            background-color: #95a5a6;
+        }
+        button.secondary:hover {
+            background-color: #7f8c8d;
+        }
+        .progress-indicator {
+            margin-top: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+        .error {
+            color: red;
+            font-size: 12px;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+        label {
+            display: block;
+            text-align: left;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div style="background: #f1c40f; color: black; padding: 10px; margin-bottom: 10px; border-radius: 4px;">
+                {% for message in messages %}
+                    <div>{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% if form.errors %}
+            <div style="background: #e74c3c; color: white; padding: 10px; margin-bottom: 10px; border-radius: 4px; text-align: left;">
+                <strong style="display:block; margin-bottom:5px;">Por favor corrige:</strong>
+                <ul style="margin: 0; padding-left: 20px;">
+                {% for field, errors in form.errors.items() %}
+                    {% for error in errors %}
+                        <li>{{ form[field].label.text }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <h1>Solicitud de Ingreso</h1>
+        <form id="regForm" method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+
+            <!-- Step 1: Personal Info -->
+            <div class="step active" id="step1">
+                <h3>Datos Personales</h3>
+                <div>
+                    {{ form.first_name(placeholder="Nombre") }}
+                </div>
+                <div>
+                    {{ form.last_name(placeholder="Apellido") }}
+                </div>
+                <div class="btn-group" style="justify-content: flex-end;">
+                    <button type="button" onclick="nextStep(1)">Siguiente</button>
+                </div>
+            </div>
+
+            <!-- Step 2: DNI -->
+            <div class="step" id="step2">
+                <h3>Identificación Civil & Bancaria</h3>
+                <div>
+                    {{ form.dni(placeholder="DNI") }}
+                </div>
+                <div>
+                    {{ form.account_number(placeholder="Número de Cuenta Bancaria") }}
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="secondary" onclick="prevStep(2)">Atrás</button>
+                    <button type="button" onclick="nextStep(2)">Siguiente</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Official Data + Password -->
+            <div class="step" id="step3">
+                <h3>Datos Oficiales & Seguridad</h3>
+                <div>
+                    {{ form.department(placeholder="Departamento") }}
+                </div>
+                <div>
+                    {{ form.badge_id(placeholder="Placa de ID") }}
+                </div>
+                <div>
+                    <label for="photo">Foto Personal</label>
+                    {{ form.photo() }}
+                </div>
+                <div>
+                    {{ form.password(placeholder="Contraseña") }}
+                </div>
+                <div>
+                    {{ form.confirm_password(placeholder="Confirmar Contraseña") }}
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="secondary" onclick="prevStep(3)">Atrás</button>
+                    <button type="submit">Enviar Solicitud</button>
+                </div>
+            </div>
+
+        </form>
+
+        <div class="progress-indicator" id="progress">
+            1/3
+        </div>
+        <div style="margin-top: 15px; font-size: 14px;">
+            <a href="{{ url_for('main.official_login') }}">Ya tengo placa</a>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        function updateProgress() {
+            document.getElementById('progress').innerText = `${currentStep}/${totalSteps}`;
+        }
+
+        function validateStep(step) {
+            const stepDiv = document.getElementById(`step${step}`);
+            const inputs = stepDiv.querySelectorAll('input, select');
+            for (let input of inputs) {
+                if (!input.value && input.hasAttribute('required')) {
+                    // Check if flask-wtf added required attribute, or we just check value
+                    // Flask-WTF usually adds required if DataRequired is used?
+                    // Actually, let's just check value for simplicity as in previous file
+                    alert("Por favor completa todos los campos.");
+                    return false;
+                }
+                // Also check value anyway
+                 if (!input.value) {
+                     // alert("Por favor completa todos los campos.");
+                     // return false;
+                     // Relax validation for hidden tokens etc? No, inputs in stepDiv are visible fields generally.
+                 }
+            }
+            return true;
+        }
+
+        function nextStep(step) {
+            // Simple client-side validation
+             const stepDiv = document.getElementById(`step${step}`);
+             const inputs = stepDiv.querySelectorAll('input:not([type="hidden"]), select');
+             for (let input of inputs) {
+                 if (!input.value) {
+                     alert("Por favor completa todos los campos.");
+                     return;
+                 }
+             }
+
+            const currentDiv = document.getElementById(`step${step}`);
+            const nextDiv = document.getElementById(`step${step + 1}`);
+
+            currentDiv.style.animation = "slideOutLeft 0.5s forwards";
+
+            setTimeout(() => {
+                currentDiv.classList.remove('active');
+                currentDiv.style.animation = "";
+
+                nextDiv.classList.add('active');
+                nextDiv.style.animation = "slideInRight 0.5s forwards";
+
+                currentStep++;
+                updateProgress();
+            }, 500);
+        }
+
+        function prevStep(step) {
+            const currentDiv = document.getElementById(`step${step}`);
+            const prevDiv = document.getElementById(`step${step - 1}`);
+
+            currentDiv.style.animation = "slideOutRight 0.5s forwards";
+
+            setTimeout(() => {
+                currentDiv.classList.remove('active');
+                currentDiv.style.animation = "";
+
+                prevDiv.classList.add('active');
+                prevDiv.style.animation = "slideInLeft 0.5s forwards";
+
+                currentStep--;
+                updateProgress();
+            }, 500);
+        }
+    </script>
+</body>
+</html>

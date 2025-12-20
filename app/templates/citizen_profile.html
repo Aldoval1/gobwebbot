@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Ciudadano - {{ citizen.first_name }} {{ citizen.last_name }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .profile-header {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+        .profile-info h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .profile-info p {
+            margin: 5px 0;
+            color: #7f8c8d;
+            font-size: 18px;
+        }
+        .sections {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .section {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+        }
+        .section h2 {
+            margin-top: 0;
+            color: #34495e;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .record-list {
+            list-style: none;
+            padding: 0;
+        }
+        .record-item {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #bdc3c7;
+        }
+        .record-item.fine { border-left-color: #e74c3c; }
+        .record-item.criminal { border-left-color: #2c3e50; cursor: pointer; }
+        .record-item.license { border-left-color: #27ae60; }
+
+        .record-meta {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-bottom: 5px;
+        }
+        .record-content {
+            font-size: 14px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #7f8c8d;
+            text-decoration: none;
+        }
+
+        /* Dropdown Button */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+        }
+
+        .dropbtn {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            cursor: pointer;
+        }
+
+        .dropdown-content a:hover {background-color: #f1f1f1}
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: #2980b9;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%;
+            border-radius: 8px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button[type="submit"] {
+            background-color: #2980b9;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .gallery {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .gallery img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('main.official_database') }}" class="back-link">← Volver a la Base de Datos</a>
+
+        <div class="profile-header">
+            <img src="{{ url_for('static', filename='img/' + (citizen.selfie_filename if citizen.selfie_filename else 'default.jpg')) }}" alt="Foto de {{ citizen.first_name }}" class="profile-img">
+            <div class="profile-info">
+                <h1>{{ citizen.first_name }} {{ citizen.last_name }}</h1>
+                <p><strong>DNI:</strong> {{ citizen.dni }}</p>
+                <p><strong>Estado Civil:</strong> Soltero/a (Ejemplo)</p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div style="background: #dff0d8; padding: 10px; margin-bottom: 20px; border-radius: 4px; color: #3c763d;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if can_edit %}
+        <div class="dropdown">
+            <button class="dropbtn">Gestionar ▼</button>
+            <div class="dropdown-content">
+                <a onclick="openModal('commentModal')">Agregar Comentario</a>
+                <a onclick="openModal('fineModal')">Agregar Multa</a>
+                {% if can_edit %}
+                <a onclick="openModal('criminalModal')">Agregar Antecedente</a>
+                {% endif %}
+                {% if can_adjust_balance %}
+                <a onclick="openModal('balanceModal')">Ajustar Saldo Bancario</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="sections">
+            <!-- Comments (formerly Police Reports) -->
+            <div class="section">
+                <h2>Comentarios</h2>
+                <ul class="record-list">
+                    {% for comment in citizen.comments %}
+                    <li class="record-item">
+                        <div class="record-meta">{{ comment.date.strftime('%d/%m/%Y') }} - Por: {{ comment.author.first_name }} {{ comment.author.last_name }}</div>
+                        <div class="record-content">{{ comment.content }}</div>
+                    </li>
+                    {% else %}
+                    <p style="color: #bdc3c7;">No hay comentarios registrados.</p>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Fines -->
+            <div class="section">
+                <h2>Solo Multas</h2>
+                <ul class="record-list">
+                    {% for fine in citizen.traffic_fines %}
+                    <li class="record-item fine">
+                        <div class="record-meta">{{ fine.date.strftime('%d/%m/%Y') }} - Por: {{ fine.author.first_name }} {{ fine.author.last_name }} - Estado: {{ fine.status }}</div>
+                        <div class="record-content"><strong>${{ fine.amount }}</strong> - {{ fine.reason }}</div>
+                    </li>
+                    {% else %}
+                    <p style="color: #bdc3c7;">No hay multas registradas.</p>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Licenses -->
+            <div class="section">
+                <h2>Licencias Activas</h2>
+                <ul class="record-list">
+                    {% for license in citizen.licenses %}
+                    <li class="record-item license">
+                        <div class="record-meta">Vence: {{ license.expiration_date.strftime('%d/%m/%Y') if license.expiration_date else 'N/A' }}</div>
+                        <div class="record-content"><strong>{{ license.type }}</strong> - {{ license.status }}</div>
+                    </li>
+                    {% else %}
+                    <p style="color: #bdc3c7;">No posee licencias activas.</p>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Criminal Records -->
+            <div class="section">
+                <h2>Antecedentes Penales</h2>
+                <ul class="record-list">
+                    {% for record in citizen.criminal_records %}
+                    <li class="record-item criminal" onclick="openDetailModal('record-{{ record.id }}')">
+                        <div class="record-meta">{{ record.date.strftime('%d/%m/%Y') }} - Por: {{ record.author.first_name }} {{ record.author.last_name }}</div>
+                        <div class="record-content">
+                            <strong>{{ record.crime }}</strong> (CP: {{ record.penal_code }})
+                        </div>
+                    </li>
+
+                    <!-- Detail Modal for each record -->
+                    <div id="record-{{ record.id }}" class="modal">
+                        <div class="modal-content">
+                            <span class="close" onclick="closeModal('record-{{ record.id }}')">&times;</span>
+                            <h3>Detalle de Antecedente Penal</h3>
+                            <p><strong>Delito:</strong> {{ record.crime }}</p>
+                            <p><strong>Código Penal:</strong> {{ record.penal_code }}</p>
+                            <p><strong>Fecha:</strong> {{ record.date.strftime('%d/%m/%Y') }}</p>
+                            <p><strong>Oficial a cargo:</strong> {{ record.author.first_name }} {{ record.author.last_name }}</p>
+                            <hr>
+                            <h4>Informe</h4>
+                            <p>{{ record.report_text }}</p>
+
+                            <h4>Fotos del Sujeto</h4>
+                            <div class="gallery">
+                                {% for photo in record.subject_photos %}
+                                    <a href="{{ url_for('static', filename='img/' + photo.filename) }}" target="_blank">
+                                        <img src="{{ url_for('static', filename='img/' + photo.filename) }}">
+                                    </a>
+                                {% else %}
+                                    <p>No hay fotos del sujeto.</p>
+                                {% endfor %}
+                            </div>
+
+                            <h4>Evidencia</h4>
+                            <div class="gallery">
+                                {% for photo in record.evidence_photos %}
+                                    <a href="{{ url_for('static', filename='img/' + photo.filename) }}" target="_blank">
+                                        <img src="{{ url_for('static', filename='img/' + photo.filename) }}">
+                                    </a>
+                                {% else %}
+                                    <p>No hay evidencia fotográfica.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p style="color: #bdc3c7;">No tiene antecedentes penales.</p>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals (Only rendered if permission exists, or hidden) -->
+    {% if can_edit %}
+    <!-- Comment Modal -->
+    <div id="commentModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('commentModal')">&times;</span>
+            <h3>Nuevo Comentario</h3>
+            <form action="{{ url_for('main.add_comment', user_id=citizen.id) }}" method="POST">
+                {{ comment_form.hidden_tag() }}
+                {{ comment_form.content(placeholder="Escriba el comentario aquí...") }}
+                <button type="submit">Agregar Comentario</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Fine Modal -->
+    <div id="fineModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('fineModal')">&times;</span>
+            <h3>Nueva Multa</h3>
+            <form action="{{ url_for('main.add_traffic_fine', user_id=citizen.id) }}" method="POST">
+                {{ fine_form.hidden_tag() }}
+                {{ fine_form.amount(placeholder="Monto ($)") }}
+                {{ fine_form.reason(placeholder="Motivo de la multa") }}
+                <button type="submit">Imponer Multa</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Criminal Record Modal -->
+    <div id="criminalModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('criminalModal')">&times;</span>
+            <h3>Nuevo Antecedente Penal</h3>
+            <form action="{{ url_for('main.add_criminal_record', user_id=citizen.id) }}" method="POST" enctype="multipart/form-data">
+                {{ criminal_form.hidden_tag() }}
+                <label>Fecha del Suceso</label>
+                {{ criminal_form.date() }}
+                {{ criminal_form.crime(placeholder="Delito Cometido") }}
+                {{ criminal_form.penal_code(placeholder="Código Penal Infringido") }}
+                {{ criminal_form.report_text(placeholder="Informe Detallado") }}
+                <label>Fotos del Sujeto (Selecciona varias)</label>
+                {{ criminal_form.subject_photos(multiple="multiple") }}
+                <label>Evidencia Fotográfica (Selecciona varias)</label>
+                {{ criminal_form.evidence_photos(multiple="multiple") }}
+                <button type="submit">Registrar Antecedente</button>
+            </form>
+        </div>
+    </div>
+
+    {% if can_adjust_balance %}
+    <!-- Balance Modal -->
+    <div id="balanceModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('balanceModal')">&times;</span>
+            <h3>Ajustar Saldo Bancario</h3>
+            <p>Saldo Actual: ${{ "{:,.2f}".format(citizen.bank_account.balance) if citizen.bank_account else '0.00' }}</p>
+            <form action="{{ url_for('main.adjust_citizen_balance', user_id=citizen.id) }}" method="POST">
+                {{ adjust_balance_form.hidden_tag() }}
+                {{ adjust_balance_form.operation() }}
+                {{ adjust_balance_form.amount(placeholder="Cantidad") }}
+                {{ adjust_balance_form.reason(placeholder="Motivo del ajuste") }}
+                <button type="submit" style="background-color: #f39c12;">Aplicar Ajuste</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <script>
+        function openModal(id) {
+            document.getElementById(id).style.display = "block";
+        }
+        function openDetailModal(id) {
+            document.getElementById(id).style.display = "block";
+        }
+        function closeModal(id) {
+            document.getElementById(id).style.display = "none";
+        }
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = "none";
+            }
+        }
+    </script>
+</body>
+</html>

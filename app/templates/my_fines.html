@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Multas - Gobierno de San Andreas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .fine-list {
+            list-style: none;
+            padding: 0;
+        }
+        .fine-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid #e74c3c; /* Red for pending */
+        }
+        .fine-item.paid {
+            border-left: 5px solid #27ae60; /* Green for paid */
+            opacity: 0.8;
+        }
+        .fine-details {
+            flex-grow: 1;
+        }
+        .fine-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .fine-item.paid .fine-amount {
+            color: #27ae60;
+        }
+        .fine-reason {
+            font-size: 18px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .fine-meta {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .btn-pay {
+            background-color: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .btn-report {
+            background-color: #f39c12;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 400px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-close {
+            background-color: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .alert-success {
+            color: #3c763d;
+            background-color: #dff0d8;
+            border-color: #d6e9c6;
+        }
+        .alert-error {
+            color: #a94442;
+            background-color: #f2dede;
+            border-color: #ebccd1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mis Multas</h1>
+            <a href="{{ url_for('main.index') }}" class="back-link">← Volver al Panel</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {% if 'éxito' in message %}alert-success{% else %}alert-error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <h2>Multas Pendientes</h2>
+        <ul class="fine-list">
+            {% for fine in fines %}
+            <li class="fine-item">
+                <div class="fine-details">
+                    <div class="fine-reason">{{ fine.reason }}</div>
+                    <div class="fine-meta">Fecha: {{ fine.date.strftime('%d/%m/%Y') }} | Oficial: {{ fine.author.first_name }} {{ fine.author.last_name }}</div>
+                </div>
+                <div class="fine-amount">${{ "%.2f"|format(fine.amount) }}</div>
+
+                <form action="{{ url_for('main.pay_fine', fine_id=fine.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn-pay" onclick="return confirm('¿Estás seguro de que quieres pagar esta multa con tu cuenta bancaria?')">Pagar</button>
+                </form>
+                <button class="btn-report" onclick="openModal()">Reportar</button>
+            </li>
+            {% else %}
+            <p style="color: #7f8c8d; text-align: center;">¡Felicidades! No tienes multas pendientes.</p>
+            {% endfor %}
+        </ul>
+
+        {% if history %}
+        <h2 style="margin-top: 40px; color: #7f8c8d;">Historial de Pagos</h2>
+        <ul class="fine-list">
+            {% for fine in history %}
+            <li class="fine-item paid">
+                <div class="fine-details">
+                    <div class="fine-reason">{{ fine.reason }}</div>
+                    <div class="fine-meta">Fecha: {{ fine.date.strftime('%d/%m/%Y') }} | Oficial: {{ fine.author.first_name }} {{ fine.author.last_name }}</div>
+                </div>
+                <div class="fine-amount">${{ "%.2f"|format(fine.amount) }}</div>
+                <span style="color: #27ae60; font-weight: bold; margin-left: 10px;">PAGADA</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <i class="fas fa-gavel" style="font-size: 40px; color: #f39c12; margin-bottom: 10px;"></i>
+            <h3>Reportar Multa</h3>
+            <p>Si consideras que esta multa fue aplicada incorrectamente, por favor solicita una cita en la oficina correspondiente para presentar tu caso.</p>
+            <button class="btn-close" onclick="closeModal()">Entendido</button>
+        </div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('reportModal').style.display = "block";
+        }
+        function closeModal() {
+            document.getElementById('reportModal').style.display = "none";
+        }
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('reportModal')) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

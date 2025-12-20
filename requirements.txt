@@ -1,0 +1,23 @@
+# Flask y Web
+Flask==3.0.3
+Flask-Login==0.6.3
+Flask-Migrate==4.0.7
+Flask-SQLAlchemy==3.1.1
+Flask-WTF==1.2.1
+WTForms==3.1.2
+gunicorn==22.0.0
+Werkzeug==3.0.3
+Jinja2==3.1.4
+email_validator
+python-dotenv
+requests
+fpdf2
+
+
+pg8000==1.31.2
+SQLAlchemy==2.0.36
+alembic==1.13.1
+
+
+discord.py
+aiohttp

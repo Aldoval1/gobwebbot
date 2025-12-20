@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Documentos - Gobierno de San Andreas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .info-item {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .info-label {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .info-value {
+            font-size: 20px;
+            color: #333;
+            font-weight: 600;
+        }
+        .pdf-section {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .btn-pdf {
+            background-color: #e74c3c;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.3s;
+        }
+        .btn-pdf:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Mis Documentos</h1>
+            <a href="{{ url_for('main.index') }}" class="back-link">← Volver al Panel</a>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <div class="info-label">Nombre Completo</div>
+                <div class="info-value">{{ current_user.first_name }} {{ current_user.last_name }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">DNI</div>
+                <div class="info-value">{{ current_user.dni }}</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Antigüedad de Cuenta</div>
+                <div class="info-value">{{ account_age }} días</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Cuenta Bancaria</div>
+                <div class="info-value">
+                    {% if current_user.bank_account %}
+                        {{ current_user.bank_account.account_number }}
+                    {% else %}
+                        No Registrada
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="pdf-section">
+            <a href="{{ url_for('main.download_criminal_record') }}" class="btn-pdf">
+                <i class="fas fa-file-pdf"></i> Descargar Antecedentes Penales
+            </a>
+        </div>
+    </div>
+</body>
+</html>

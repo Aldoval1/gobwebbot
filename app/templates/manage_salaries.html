@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionar Sueldos - {{ current_user.department }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #34495e;
+            color: white;
+        }
+        tr.warning {
+            background-color: #ffe6e6;
+            color: #c0392b;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            background-color: #3498db;
+        }
+        .btn-submit {
+            background-color: #27ae60;
+            font-size: 18px;
+            padding: 15px 30px;
+            margin-top: 30px;
+            display: block;
+            width: 100%;
+        }
+        input[type="number"] {
+            padding: 5px;
+            width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="{{ url_for('main.official_dashboard') }}" style="text-decoration: none; color: #7f8c8d;">← Volver</a>
+        <h1>Gestión de Sueldos - {{ current_user.department }}</h1>
+        <p>Asigna los sueldos a tus empleados. Los usuarios marcados en rojo no tienen cuenta bancaria y no podrán recibir pagos.</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div style="background: #dff0d8; padding: 10px; color: #3c763d;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Rango</th>
+                    <th>Cuenta Bancaria</th>
+                    <th>Sueldo Actual</th>
+                    <th>Nuevo Sueldo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                <tr class="{% if not member.bank_account %}warning{% endif %}">
+                    <td>{{ member.first_name }} {{ member.last_name }}</td>
+                    <td>{{ member.official_rank }}</td>
+                    <td>
+                        {% if member.bank_account %}
+                            {{ member.bank_account.account_number }}
+                        {% else %}
+                            <strong>NO TIENE</strong>
+                        {% endif %}
+                    </td>
+                    <td>${{ "{:,.2f}".format(member.salary if member.salary else 0) }}</td>
+                    <td>
+                        <form action="{{ url_for('main.update_salary', user_id=member.id) }}" method="POST" style="display:flex; gap:5px;">
+                            {{ salary_form.hidden_tag() }}
+                            {{ salary_form.salary(value=member.salary) }}
+                            <button type="submit" class="btn">Guardar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <form action="{{ url_for('main.submit_payroll') }}" method="POST">
+            <button type="submit" class="btn btn-submit">Enviar Nómina para Aprobación</button>
+        </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gobierno de San Andreas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling during animation */
+        }
+
+        .login-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            width: 320px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        /* Logo Styling */
+        .logo-img {
+            width: 120px;
+            height: auto;
+            margin-bottom: 20px;
+            transition: all 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+        }
+
+        /* Content wrapper to hide/show form elements */
+        .login-content {
+            width: 100%;
+            opacity: 1;
+            max-height: 600px;
+            transition: all 0.8s ease-in-out;
+            overflow: hidden;
+        }
+
+        /* LOADING STATE */
+        body.loading .login-container {
+            background-color: transparent;
+            box-shadow: none;
+            width: 100%; /* Allow centering without width constraint */
+        }
+
+        body.loading .logo-img {
+            transform: scale(3); /* Make logo large */
+            margin-bottom: 0;
+        }
+
+        body.loading .login-content {
+            opacity: 0;
+            max-height: 0;
+            margin: 0;
+        }
+
+        /* Form Elements */
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .error {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 10px;
+            background: #fde8e7;
+            padding: 8px;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .register-link {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .register-link a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+
+        .official-link {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            font-size: 12px;
+        }
+        .official-link a {
+            color: #95a5a6;
+            text-decoration: none;
+        }
+         .official-link a:hover {
+            color: #7f8c8d;
+        }
+
+    </style>
+</head>
+<body class="loading">
+    <div class="login-container">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="San Andreas Government" class="logo-img">
+
+        <div class="login-content">
+            <h1>Gobierno de San Andreas</h1>
+
+            {% if logged_in %}
+                <p style="color: #28a745; margin-bottom: 20px;">Has iniciado sesión correctamente.</p>
+                <a href="{{ url_for('main.logout') }}"><button style="background-color: #dc3545;">Cerrar Sesión</button></a>
+                 <a href="{{ url_for('main.citizen_dashboard') }}" style="display:block; margin-top:10px; text-decoration:none; color:#007bff;">Ir al Dashboard</a>
+            {% else %}
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div>
+                        {{ form.dni(placeholder="DNI") }}
+                    </div>
+                    <div>
+                        {{ form.password(placeholder="Contraseña") }}
+                    </div>
+                    <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
+                        {{ form.remember_me() }} {{ form.remember_me.label }}
+                    </div>
+                    <button type="submit">Iniciar Sesión</button>
+                </form>
+
+                <div class="register-link">
+                    ¿No tienes una cuenta? <a href="{{ url_for('main.register') }}">Regístrate aquí</a>
+                </div>
+                <div class="official-link">
+                    <a href="{{ url_for('main.official_login') }}">Accede como funcionario</a>
+                </div>
+            {% endif %}
+
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="error">
+                    {% for message in messages %}
+                        <div>{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </div>
+
+    <script>
+        // Splash Screen Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait a bit to show the logo in full size
+            setTimeout(() => {
+                document.body.classList.remove('loading');
+            }, 1500); // 1.5 seconds splash
+        });
+    </script>
+</body>
+</html>

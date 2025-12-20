@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Cita - Gobierno de San Andreas</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ecf0f1;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+        .official-list {
+            list-style: none;
+            padding: 0;
+        }
+        .official-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .official-info {
+            flex-grow: 1;
+        }
+        .official-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .official-rank {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        .btn-book {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 400px;
+            border-radius: 8px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button[type="submit"] {
+            background-color: #27ae60;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .alert-success { background-color: #dff0d8; color: #3c763d; border-color: #d6e9c6; }
+        .alert-error { background-color: #f2dede; color: #a94442; border-color: #ebccd1; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Solicitar Cita</h1>
+            <a href="{{ url_for('main.index') }}" class="back-link">← Volver al Panel</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {% if 'éxito' in message %}alert-success{% else %}alert-error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <p>Seleccione un funcionario del Gobierno para solicitar una cita:</p>
+
+        <ul class="official-list">
+            {% for official in officials %}
+            <li class="official-item">
+                <div class="official-info">
+                    <div class="official-name">{{ official.first_name }} {{ official.last_name }}</div>
+                    <div class="official-rank">{{ official.official_rank }} - Departamento de Gobierno</div>
+                </div>
+                <button class="btn-book" onclick="openBookModal('{{ official.id }}', '{{ official.first_name }} {{ official.last_name }}')">Solicitar Cita</button>
+            </li>
+            {% else %}
+            <p style="color: #7f8c8d; text-align: center;">No hay funcionarios disponibles en este momento.</p>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Cita con <span id="officialName"></span></h3>
+            <form id="bookForm" method="POST">
+                {{ form.hidden_tag() }}
+                <label>Fecha</label>
+                {{ form.date() }}
+                <label>Hora</label>
+                {{ form.time() }}
+                <label>Motivo</label>
+                {{ form.description(placeholder="Describa el motivo de la cita") }}
+                <button type="submit">Enviar Solicitud</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openBookModal(id, name) {
+            document.getElementById('officialName').innerText = name;
+            document.getElementById('bookForm').action = "/appointments/book/" + id;
+            document.getElementById('bookModal').style.display = "block";
+        }
+        function closeModal() {
+            document.getElementById('bookModal').style.display = "none";
+        }
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('bookModal')) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

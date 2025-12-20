@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Antecedentes Penales - {{ user.dni }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 10px;
+        }
+        .header-info {
+            margin-bottom: 30px;
+        }
+        .header-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .record {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            page-break-inside: avoid;
+        }
+        .record-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #c0392b;
+            margin-bottom: 5px;
+        }
+        .record-meta {
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        .record-body {
+            margin-bottom: 10px;
+        }
+        .photos {
+            margin-top: 10px;
+        }
+        .photo-label {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        img {
+            max-width: 200px;
+            max-height: 200px;
+            margin: 5px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Antecedentes Penales</h1>
+
+    <div class="header-info">
+        <p><strong>Ciudadano:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+        <p><strong>DNI:</strong> {{ user.dni }}</p>
+        <p><strong>Fecha de Emisión:</strong> {{ date.strftime('%d/%m/%Y %H:%M') }}</p>
+        <p><strong>Departamento de Justicia de San Andreas</strong></p>
+    </div>
+
+    {% if records %}
+        {% for record in records %}
+        <div class="record">
+            <div class="record-title">{{ record.crime }} (CP: {{ record.penal_code }})</div>
+            <div class="record-meta">Fecha del Suceso: {{ record.date.strftime('%d/%m/%Y') }} | Oficial a Cargo: {{ record.author.first_name }} {{ record.author.last_name }}</div>
+            <div class="record-body">{{ record.report_text }}</div>
+
+            {% if record.subject_photos %}
+            <div class="photos">
+                <div class="photo-label">Sujeto:</div>
+                {% for photo in record.subject_photos %}
+                    {# xhtml2pdf usually needs absolute path or full url. Using app.root_path #}
+                    <img src="{{ config['UPLOAD_FOLDER'] }}/{{ photo.filename }}">
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if record.evidence_photos %}
+            <div class="photos">
+                <div class="photo-label">Evidencia:</div>
+                {% for photo in record.evidence_photos %}
+                    <img src="{{ config['UPLOAD_FOLDER'] }}/{{ photo.filename }}">
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p>No se encontraron antecedentes penales registrados para este ciudadano.</p>
+    {% endif %}
+</body>
+</html>

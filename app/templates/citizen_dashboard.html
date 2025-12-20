@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Ciudadano - Gobierno de San Andreas</title>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* --- ESTILOS GENERALES (Sobrescribiendo globales) --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+            background-color: #f4f6f9 !important; /* Fondo gris claro limpio */
+            background-image: none !important; /* Asegura que no haya gradientes */
+            color: #333 !important;
+            margin: 0 !important;
+            display: block !important;
+            height: auto !important;
+            min-height: 100vh;
+            overflow-y: auto !important;
+        }
+        
+        /* HEADER */
+        .header {
+            background-color: #2c3e50; /* Fondo oscuro */
+            color: white;
+            padding: 10px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 10;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .header-logo {
+            height: 65px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+        .header-title h1 {
+            margin: 0;
+            font-size: 1.6em;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #ffffff !important; /* FORZADO BLANCO */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .header-title small {
+            color: #ecf0f1; /* Blanco grisáceo */
+            font-size: 0.9em;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+        
+        .logout-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 25px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: background-color 0.2s, transform 0.2s;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(216, 216, 216, 0.2);
+        }
+        .logout-btn:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        /* CONTENEDOR PRINCIPAL */
+        .container {
+            max-width: 1200px;
+            margin: 40px auto; /* Más margen superior */
+            padding: 0 30px;
+        }
+
+        /* TARJETA DE BIENVENIDA */
+        .welcome-card {
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Sombra suave */
+            margin-bottom: 50px; /* Separación con las cuadrículas */
+            display: flex;
+            flex-direction: column; /* Cambiado a columna para centrar mejor */
+            align-items: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Decoración sutil de fondo en la tarjeta */
+        .welcome-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db, #ffffff);
+        }
+
+        .user-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #f0f2f5;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .welcome-text h2 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 2.2em;
+        }
+        .user-dni {
+            color: #7f8c8d;
+            font-weight: 600;
+            font-size: 1.2em;
+            margin-bottom: 25px;
+            display: inline-block;
+            background: #f8f9fa;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        /* GRID DE MENÚ (Cuadrículas) */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Tarjetas un poco más anchas */
+            gap: 40px; /* Separación aumentada entre cuadrículas */
+            padding-bottom: 50px;
+        }
+        
+        .card-menu {
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px 35px;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05); /* Sombra limpia, sin fondo negro */
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s;
+            border-top: 4px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            position: relative;
+            background-clip: padding-box; /* Evita bordes negros */
+        }
+        .card-menu:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+        
+        /* Colores de bordes */
+        .border-docs { border-color: #3498db; }
+        .border-bank { border-color: #27ae60; }
+        .border-fines { border-color: #e74c3c; }
+        .border-appts { border-color: #9b59b6; }
+        .border-lotto { border-color: #f1c40f; }
+
+        .card-icon {
+            font-size: 3.5em;
+            margin-bottom: 25px;
+            display: block;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        .card-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: block;
+            color: #2c3e50;
+        }
+        .card-desc {
+            font-size: 1em;
+            color: #95a5a6;
+            line-height: 1.5;
+        }
+
+        /* --- INTEGRACIÓN DISCORD CENTRALIZADA --- */
+        .discord-container {
+            margin-top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .discord-status-bar {
+            padding: 15px 30px;
+            border-radius: 50px; /* Bordes redondeados tipo píldora */
+            font-size: 1em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            width: fit-content;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 10px rgba(88, 101, 242, 0.2);
+        }
+        .discord-status-bar:hover {
+            transform: scale(1.02);
+        }
+        
+        /* Estado: No Vinculado */
+        .discord-not-linked {
+            background-color: #fff;
+            border: 2px solid #5865F2;
+            color: #5865F2;
+        }
+        .btn-discord-mini {
+            background-color: #5865F2;
+            color: white;
+            padding: 10px 25px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1em;
+            transition: background 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-discord-mini:hover {
+            background-color: #4752c4;
+            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+        }
+
+        /* Estado: Vinculado */
+        .discord-linked {
+            background-color: #f0fdf4;
+            border: 2px solid #27ae60;
+            color: #166534;
+            padding: 15px 40px;
+        }
+        .badge-verified {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER SUPERIOR -->
+    <div class="header">
+        <div class="header-left">
+            <!-- Logo del Gobierno -->
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Gobierno" class="header-logo" onerror="this.style.display='none'">
+            <div class="header-title">
+                <h1>Gobierno de San Andreas</h1>
+                <small>Portal del Ciudadano</small>
+            </div>
+        </div>
+        <div>
+            <span style="margin-right: 20px; font-weight: 500; font-size: 1.1em;">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+            <a href="{{ url_for('main.logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </a>
+        </div>
+    </div>
+
+    <!-- CONTENIDO -->
+    <div class="container">
+        
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div style="background-color: #d4edda; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 30px; border-left: 5px solid #28a745; text-align: center; font-size: 1.1em;">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- TARJETA DE BIENVENIDA (CENTRADA) -->
+        <div class="welcome-card">
+            
+            <!-- Foto de Perfil (Si existe) -->
+            {% if current_user.selfie_filename %}
+                <img src="{{ url_for('static', filename='img/' + current_user.selfie_filename) }}" alt="Foto Perfil" class="user-avatar">
+            {% else %}
+                <div class="user-avatar" style="background: #eee; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 40px;">
+                    <i class="fas fa-user"></i>
+                </div>
+            {% endif %}
+
+            <div class="welcome-text">
+                <h2>Hola, {{ current_user.first_name }}</h2>
+                <div class="user-dni">DNI: {{ current_user.dni }}</div>
+            </div>
+            
+            <!-- SECCIÓN DISCORD CENTRALIZADA -->
+            <div class="discord-container">
+                {% if current_user.discord_id %}
+                    <div class="discord-status-bar discord-linked">
+                        <span class="badge-verified"><i class="fab fa-discord" style="font-size: 1.3em;"></i> Discord Vinculado</span>
+                        <small style="opacity: 0.8; font-weight: normal;">(ID: {{ current_user.discord_id }})</small>
+                    </div>
+                {% else %}
+                    <div class="discord-status-bar discord-not-linked">
+                        <span style="display: flex; align-items: center; gap: 10px; margin-right: 15px;">
+                            <i class="fab fa-discord" style="font-size: 1.5em;"></i> 
+                            Activa las notificaciones oficiales
+                        </span>
+                        <a href="{{ url_for('main.discord_login') }}" class="btn-discord-mini">
+                            Conectar Ahora
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- MENÚ PRINCIPAL (CUADRÍCULAS SEPARADAS) -->
+        <div class="dashboard-grid">
+            
+            <a href="{{ url_for('main.my_documents') }}" class="card-menu border-docs">
+                <i class="fas fa-id-card card-icon" style="color: #3498db;"></i>
+                <span class="card-title">Mis Documentos</span>
+                <span class="card-desc">Ver DNI, Licencias y Antecedentes</span>
+            </a>
+
+            <a href="{{ url_for('main.banking_dashboard') }}" class="card-menu border-bank">
+                <i class="fas fa-university card-icon" style="color: #27ae60;"></i>
+                <span class="card-title">Banca Estatal</span>
+                <span class="card-desc">Gestión de cuentas y préstamos</span>
+            </a>
+
+            <a href="{{ url_for('main.my_fines') }}" class="card-menu border-fines">
+                <i class="fas fa-file-invoice-dollar card-icon" style="color: #e74c3c;"></i>
+                <span class="card-title">Mis Multas</span>
+                <span class="card-desc">Consultar y pagar infracciones</span>
+            </a>
+
+            <a href="{{ url_for('main.appointments') }}" class="card-menu border-appts">
+                <i class="fas fa-calendar-check card-icon" style="color: #9b59b6;"></i>
+                <span class="card-title">Citas Previas</span>
+                <span class="card-desc">Solicitar cita con funcionarios</span>
+            </a>
+
+            <a href="{{ url_for('main.lottery') }}" class="card-menu border-lotto">
+                <i class="fas fa-ticket-alt card-icon" style="color: #f1c40f;"></i>
+                <span class="card-title">Lotería Nacional</span>
+                <span class="card-desc">¡Participa y gana premios!</span>
+            </a>
+
+        </div>
+    </div>
+
+</body>
+</html>
