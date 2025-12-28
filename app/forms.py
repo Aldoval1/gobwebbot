@@ -158,6 +158,11 @@ class GovFundAdjustForm(FlaskForm):
     reason = StringField('Motivo', validators=[DataRequired()])
     submit = SubmitField('Ajustar Fondo')
 
+class GovFinancialsForm(FlaskForm):
+    expenses_description = TextAreaField('Descripción de Gastos', validators=[DataRequired()])
+    net_benefits = FloatField('Beneficios Netos', validators=[DataRequired(), NumberRange(min=0)])
+    submit = SubmitField('Actualizar Finanzas')
+
 class SalaryForm(FlaskForm):
     salary = FloatField('Salario', validators=[DataRequired(), NumberRange(min=0)])
     submit = SubmitField('Guardar')

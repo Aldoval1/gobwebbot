@@ -10,7 +10,7 @@ from app.forms import (
     SearchUserForm, CriminalRecordForm, TrafficFineForm, CommentForm,
     TransferForm, LoanForm, LoanRepayForm, SavingsForm, CardCustomizationForm,
     LotteryTicketForm, AdjustBalanceForm, GovFundAdjustForm, SalaryForm, AppointmentForm,
-    CreateLeaderForm
+    CreateLeaderForm, GovFinancialsForm
 )
 from app.models import (
     User, Comment, TrafficFine, License, CriminalRecord,
@@ -19,6 +19,7 @@ from app.models import (
     Lottery, LotteryTicket, GovernmentFund, PayrollRequest, PayrollItem,
     Appointment
 )
+from sqlalchemy import func
 from flask_login import current_user, login_user, logout_user, login_required
 from flask import Blueprint
 from werkzeug.utils import secure_filename
@@ -742,6 +743,102 @@ def lottery():
 
     return render_template('lottery.html', lottery=lottery, form=form, my_tickets=my_tickets)
 
+@bp.route('/licenses', methods=['GET', 'POST'])
+@login_required
+def licenses():
+    if current_user.badge_id:
+        return redirect(url_for('main.official_dashboard'))
+
+    account = current_user.bank_account
+
+    # Precios de licencias
+    license_prices = {
+        'Pilot': 10000,
+        'Operating': 4000,
+        'AlcoholTobacco': 3000,
+        'PharmaDrugs': 2500,
+        'VehicleRepair': 3500,
+        'Special': 3000,
+        'Stripping': 3000
+    }
+
+    license_names = {
+        'Pilot': 'Licencia de Piloto',
+        'Operating': 'Licencia de Funcionamiento',
+        'AlcoholTobacco': 'Venta de Alcohol y Tabaco',
+        'PharmaDrugs': 'Venta de Drogas Fármacas',
+        'VehicleRepair': 'Reparación y Renovación de Vehículos',
+        'Special': 'Licencias Especiales',
+        'Stripping': 'Licencia de Stripping'
+    }
+
+    if request.method == 'POST':
+        if not account:
+            flash('Necesitas una cuenta bancaria para comprar licencias.')
+            return redirect(url_for('main.licenses'))
+
+        selected_licenses = request.form.getlist('licenses')
+        if not selected_licenses:
+            flash('No seleccionaste ninguna licencia.')
+            return redirect(url_for('main.licenses'))
+
+        # Validate licenses
+        valid_licenses = []
+        total_cost = 0
+        for lic in selected_licenses:
+            if lic in license_prices:
+                total_cost += license_prices[lic]
+                valid_licenses.append(lic)
+
+        if not valid_licenses:
+             flash('Licencias no válidas.')
+             return redirect(url_for('main.licenses'))
+
+        if account.balance < total_cost:
+            flash(f'Fondos insuficientes. Costo total: ${total_cost}')
+        else:
+            account.balance -= total_cost
+
+            expiration = datetime.utcnow().date() + timedelta(days=30)
+
+            for lic in valid_licenses:
+                new_license = License(
+                    type=license_names.get(lic, lic),
+                    status='Activa',
+                    expiration_date=expiration,
+                    user_id=current_user.id
+                )
+                db.session.add(new_license)
+
+            # Transaction record
+            trans = BankTransaction(
+                account_id=account.id,
+                type='purchase',
+                amount=total_cost,
+                description=f'Compra de Licencias ({len(selected_licenses)})'
+            )
+            db.session.add(trans)
+            db.session.commit()
+
+            fund = get_gov_fund()
+            # fund.balance += total_cost # El usuario no especificó si va al gobierno, pero "dinero se saca de la cuenta". Asumiremos que se quema o va al net benefits si se quisiera, pero por ahora solo se resta del usuario.
+
+            flash(f'Compra realizada por ${total_cost}. Licencias añadidas.')
+            return redirect(url_for('main.licenses'))
+
+    # Active licenses
+    active_licenses = []
+    if current_user.licenses:
+        for l in current_user.licenses:
+            if l.status == 'Activa' and l.expiration_date and l.expiration_date >= datetime.utcnow().date():
+                days_left = (l.expiration_date - datetime.utcnow().date()).days
+                active_licenses.append({
+                    'type': l.type,
+                    'days_left': days_left
+                })
+
+    return render_template('licenses.html', active_licenses=active_licenses, prices=license_prices)
+
 @bp.route('/lottery/buy', methods=['POST'])
 @login_required
 def buy_lottery_ticket():
@@ -908,8 +1005,36 @@ def government_dashboard():
     pending_payrolls = PayrollRequest.query.filter_by(status='Pending').order_by(PayrollRequest.created_at.desc()).all()
     fund_form = GovFundAdjustForm()
     create_leader_form = CreateLeaderForm()
+    financials_form = GovFinancialsForm(obj=fund)
 
-    return render_template('government_dashboard.html', fund=fund, pending_payrolls=pending_payrolls, fund_form=fund_form, create_leader_form=create_leader_form)
+    total_user_money = db.session.query(func.sum(BankAccount.balance)).scalar() or 0.0
+    total_loans = db.session.query(func.sum(BankLoan.amount_due)).scalar() or 0.0
+
+    return render_template('government_dashboard.html',
+                           fund=fund,
+                           pending_payrolls=pending_payrolls,
+                           fund_form=fund_form,
+                           create_leader_form=create_leader_form,
+                           financials_form=financials_form,
+                           total_user_money=total_user_money,
+                           total_loans=total_loans)
+
+@bp.route('/government/financials/update', methods=['POST'])
+@login_required
+def government_financials_update():
+    if current_user.department != 'Gobierno':
+        return redirect(url_for('main.official_dashboard'))
+
+    form = GovFinancialsForm()
+    if form.validate_on_submit():
+        fund = get_gov_fund()
+        fund.expenses_description = form.expenses_description.data
+        fund.net_benefits = form.net_benefits.data
+        db.session.commit()
+        flash('Información financiera actualizada.')
+    else:
+        flash('Error al actualizar información financiera.')
+    return redirect(url_for('main.government_dashboard'))
 
 @bp.route('/government/create_leader', methods=['POST'])
 @login_required
@@ -988,11 +1113,13 @@ def government_payroll_action(req_id, action):
 
     if action == 'approve':
         fund = get_gov_fund()
-        if fund.balance < req.total_amount:
-            flash('Fondos insuficientes en el gobierno para pagar esta nómina.', 'error')
-            return redirect(url_for('main.government_dashboard'))
+        # if fund.balance < req.total_amount:
+        #    flash('Fondos insuficientes en el gobierno para pagar esta nómina.', 'error')
+        #    return redirect(url_for('main.government_dashboard'))
 
-        fund.balance -= req.total_amount
+        # fund.balance -= req.total_amount
+        # NOTA: Se elimina el descuento del fondo del gobierno según solicitud.
+        # "Instead of discounting money from the government account... what this really expresses is the total amount of money there is."
 
         count = 0
         for item in req.items:
