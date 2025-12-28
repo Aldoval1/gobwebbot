@@ -143,6 +143,8 @@ class LotteryTicket(db.Model):
 class GovernmentFund(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     balance = db.Column(db.Float, default=1000000.0)
+    expenses_description = db.Column(db.Text, default="")
+    net_benefits = db.Column(db.Float, default=0.0)
 
 class PayrollRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
