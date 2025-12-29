@@ -1,6 +1,7 @@
 from app import create_app, db
 from dotenv import load_dotenv
 import os
+from flask_migrate import upgrade
 
 # Importar modelos para que SQLAlchemy sepa qué tablas crear
 from app.models import (
@@ -19,7 +20,15 @@ with app.app_context():
     try:
         print("🔄 Verificando estado de la Base de Datos...")
         
+        # 0. EJECUTAR MIGRACIONES PENDIENTES
+        # Esto soluciona el error 'column does not exist' aplicando los cambios pendientes (alembic)
+        print("🛠️ Aplicando migraciones pendientes (Flask-Migrate)...")
+        upgrade() 
+        print("✅ Migraciones aplicadas.")
+
         # 1. Crear Tablas (Si no existen)
+        # db.create_all() crea las tablas si no existen, pero NO actualiza columnas nuevas.
+        # Por eso necesitamos upgrade() arriba.
         db.create_all()
         print("✅ Tablas verificadas.")
 
