@@ -131,7 +131,6 @@ def get_lottery_state():
 def get_gov_fund():
     fund = GovernmentFund.query.first()
     if not fund:
-        # Se inicializa en 0.0 si no existe, para ser configurado manualmente
         fund = GovernmentFund(balance=0.0)
         db.session.add(fund)
         db.session.commit()
@@ -1011,6 +1010,9 @@ def government_dashboard():
     total_user_money = db.session.query(func.sum(BankAccount.balance)).scalar() or 0.0
     total_loans = db.session.query(func.sum(BankLoan.amount_due)).scalar() or 0.0
 
+    # Obtener lista de todos los usuarios ciudadanos (no funcionarios) que tienen cuenta bancaria
+    all_users = User.query.filter(User.badge_id == None).join(BankAccount).all()
+
     return render_template('government_dashboard.html',
                            fund=fund,
                            pending_payrolls=pending_payrolls,
@@ -1018,7 +1020,8 @@ def government_dashboard():
                            create_leader_form=create_leader_form,
                            financials_form=financials_form,
                            total_user_money=total_user_money,
-                           total_loans=total_loans)
+                           total_loans=total_loans,
+                           all_users=all_users) # Pasamos la lista de usuarios
 
 @bp.route('/government/financials/update', methods=['POST'])
 @login_required
@@ -1119,6 +1122,43 @@ def government_balance_set():
             flash('Valor inválido.', 'danger')
             
     return redirect(url_for('main.government_dashboard'))
+
+# NUEVA RUTA: Actualizar saldo de usuario específico desde lista
+@bp.route('/government/user/balance/update', methods=['POST'])
+@login_required
+def government_user_balance_update():
+    if current_user.department != 'Gobierno':
+        return redirect(url_for('main.official_dashboard'))
+    
+    user_id = request.form.get('user_id')
+    new_balance = request.form.get('balance')
+
+    if user_id and new_balance:
+        try:
+            user = User.query.get(user_id)
+            if user and user.bank_account:
+                old_balance = user.bank_account.balance
+                user.bank_account.balance = float(new_balance)
+                
+                # Crear registro de transacción para auditoría
+                trans = BankTransaction(
+                    account_id=user.bank_account.id,
+                    type='government_adjustment',
+                    amount=abs(float(new_balance) - old_balance),
+                    description=f'Ajuste manual Gobierno (Previo: ${old_balance:,.2f})'
+                )
+                db.session.add(trans)
+                db.session.commit()
+                
+                flash(f'Saldo de {user.first_name} {user.last_name} actualizado a ${user.bank_account.balance:,.2f}', 'success')
+                notify_discord_bot(user, f"⚠️ **Ajuste de Saldo**\nEl gobierno ha establecido tu saldo manualmente a ${user.bank_account.balance:,.2f}.")
+            else:
+                flash('Usuario no encontrado o sin cuenta bancaria.', 'danger')
+        except ValueError:
+            flash('Valor inválido.', 'danger')
+            
+    return redirect(url_for('main.government_dashboard'))
+
 
 @bp.route('/government/payroll/action/<int:req_id>/<action>', methods=['POST'])
 @login_required
