@@ -1007,7 +1007,9 @@ def government_dashboard():
     create_leader_form = CreateLeaderForm()
     financials_form = GovFinancialsForm(obj=fund)
 
-    total_user_money = db.session.query(func.sum(BankAccount.balance)).scalar() or 0.0
+    # MODIFICADO: Excluir la cuenta del gobierno 'GOV-000' de la suma total
+    total_user_money = db.session.query(func.sum(BankAccount.balance)).filter(BankAccount.account_number != 'GOV-000').scalar() or 0.0
+    
     total_loans = db.session.query(func.sum(BankLoan.amount_due)).scalar() or 0.0
 
     # Obtener lista de todos los usuarios ciudadanos (no funcionarios) que tienen cuenta bancaria
