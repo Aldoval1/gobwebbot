@@ -131,7 +131,8 @@ def get_lottery_state():
 def get_gov_fund():
     fund = GovernmentFund.query.first()
     if not fund:
-        fund = GovernmentFund(balance=1000000.0)
+        # Se inicializa en 0.0 si no existe, para ser configurado manualmente
+        fund = GovernmentFund(balance=0.0)
         db.session.add(fund)
         db.session.commit()
     return fund
@@ -1098,6 +1099,25 @@ def government_balance_update():
             fund.balance -= form.amount.data
             flash(f'Se retiraron ${form.amount.data} del fondo.')
         db.session.commit()
+    return redirect(url_for('main.government_dashboard'))
+
+# NUEVA RUTA: Establecer balance específico directamente
+@bp.route('/government/balance/set', methods=['POST'])
+@login_required
+def government_balance_set():
+    if current_user.department != 'Gobierno':
+        return redirect(url_for('main.official_dashboard'))
+    
+    new_balance = request.form.get('balance')
+    if new_balance:
+        try:
+            fund = get_gov_fund()
+            fund.balance = float(new_balance)
+            db.session.commit()
+            flash(f'Balance del gobierno establecido a ${fund.balance:,.2f}', 'success')
+        except ValueError:
+            flash('Valor inválido.', 'danger')
+            
     return redirect(url_for('main.government_dashboard'))
 
 @bp.route('/government/payroll/action/<int:req_id>/<action>', methods=['POST'])
