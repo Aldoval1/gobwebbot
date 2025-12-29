@@ -108,6 +108,36 @@
             </div>
         </div>
 
+        <!-- SECCIÓN DE GESTIÓN DE SALDOS DE USUARIOS (NUEVO) -->
+        <div class="card card-financial p-4 mb-4 border border-secondary">
+            <h4 class="text-secondary mb-3">Gestión Rápida de Saldos Ciudadanos</h4>
+            <p class="small text-muted mb-3">Selecciona un ciudadano para ver y editar su saldo bancario actual.</p>
+            
+            <form action="{{ url_for('main.government_user_balance_update') }}" method="POST" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label">Seleccionar Ciudadano</label>
+                    <select class="form-select" id="userSelect" name="user_id" onchange="updateBalanceInput()" required>
+                        <option value="" selected disabled>-- Elige un usuario --</option>
+                        {% for user in all_users %}
+                            <option value="{{ user.id }}" data-balance="{{ user.bank_account.balance }}">
+                                {{ user.first_name }} {{ user.last_name }} (DNI: {{ user.dni }}) - Saldo Actual: ${{ "{:,.2f}".format(user.bank_account.balance) }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Nuevo Saldo</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" step="0.01" class="form-control" name="balance" id="userBalanceInput" placeholder="0.00" required>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-warning w-100 fw-bold">Actualizar Saldo</button>
+                </div>
+            </form>
+        </div>
+
         <!-- SECCIÓN SECUNDARIA: DETALLES Y ACCIONES -->
         <div class="row g-4 mb-4">
             <div class="col-md-6">
@@ -239,6 +269,20 @@
             document.getElementById(id).style.display = "none";
             document.getElementById(id).classList.remove('show');
         }
+        
+        // Función para autocompletar el saldo cuando se selecciona un usuario
+        function updateBalanceInput() {
+            var select = document.getElementById('userSelect');
+            var selectedOption = select.options[select.selectedIndex];
+            var balance = selectedOption.getAttribute('data-balance');
+            
+            if (balance) {
+                document.getElementById('userBalanceInput').value = parseFloat(balance).toFixed(2);
+            } else {
+                document.getElementById('userBalanceInput').value = '';
+            }
+        }
+
         // Cerrar al hacer click fuera
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
