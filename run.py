@@ -2,6 +2,7 @@ from app import create_app, db
 from dotenv import load_dotenv
 import os
 from flask_migrate import upgrade
+from sqlalchemy import text, inspect  # Importamos herramientas para inspeccionar y modificar DB manualmente
 
 # Importar modelos para que SQLAlchemy sepa qué tablas crear
 from app.models import (
@@ -20,19 +21,40 @@ with app.app_context():
     try:
         print("🔄 Verificando estado de la Base de Datos...")
         
-        # 0. EJECUTAR MIGRACIONES PENDIENTES
-        # Esto soluciona el error 'column does not exist' aplicando los cambios pendientes (alembic)
-        print("🛠️ Aplicando migraciones pendientes (Flask-Migrate)...")
-        upgrade() 
-        print("✅ Migraciones aplicadas.")
+        # 0. INTENTO DE MIGRACIÓN (Flask-Migrate)
+        try:
+            print("🛠️ Aplicando migraciones pendientes...")
+            upgrade() 
+            print("✅ Migraciones aplicadas.")
+        except Exception as e:
+            print(f"⚠️ Error en upgrade(): {e}. Intentando reparación manual...")
 
-        # 1. Crear Tablas (Si no existen)
+        # 1. REPARACIÓN MANUAL DE SCHEMA (Si las migraciones fallan)
+        # Verificamos si faltan las columnas específicas que causan el error y las agregamos a la fuerza.
+        inspector = inspect(db.engine)
+        if 'government_fund' in inspector.get_table_names():
+            existing_columns = [col['name'] for col in inspector.get_columns('government_fund')]
+            
+            # Chequeo y reparación de 'expenses_description'
+            if 'expenses_description' not in existing_columns:
+                print("🔧 Reparando DB: Agregando columna faltante 'expenses_description'...")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE government_fund ADD COLUMN expenses_description TEXT"))
+                    conn.commit()
+            
+            # Chequeo y reparación de 'net_benefits'
+            if 'net_benefits' not in existing_columns:
+                print("🔧 Reparando DB: Agregando columna faltante 'net_benefits'...")
+                with db.engine.connect() as conn:
+                    conn.execute(text("ALTER TABLE government_fund ADD COLUMN net_benefits FLOAT DEFAULT 0.0"))
+                    conn.commit()
+
+        # 2. Crear Tablas (Si no existen)
         # db.create_all() crea las tablas si no existen, pero NO actualiza columnas nuevas.
-        # Por eso necesitamos upgrade() arriba.
         db.create_all()
         print("✅ Tablas verificadas.")
 
-        # 2. Inicializar Lotería y Fondo (Si no existen)
+        # 3. Inicializar Lotería y Fondo (Si no existen)
         if not GovernmentFund.query.first():
             db.session.add(GovernmentFund(balance=1000000.0))
             print("💰 Fondo de Gobierno inicializado.")
@@ -42,7 +64,7 @@ with app.app_context():
             db.session.add(Lottery(current_jackpot=50000.0, last_run_date=datetime.utcnow().date()))
             print("🎰 Lotería inicializada.")
 
-        # 3. Crear Super Admin '000' (Si no existe)
+        # 4. Crear Super Admin '000' (Si no existe)
         admin = User.query.filter_by(badge_id="000").first()
         if not admin:
             print("🚀 Creando Usuario Admin (000/000)...")
