@@ -1143,7 +1143,7 @@ def government_user_balance_update():
                 # Crear registro de transacción para auditoría
                 trans = BankTransaction(
                     account_id=user.bank_account.id,
-                    type='government_adjustment',
+                    type='gov_manual', # FIXED: Was 'government_adjustment' (too long)
                     amount=abs(float(new_balance) - old_balance),
                     description=f'Ajuste manual Gobierno (Previo: ${old_balance:,.2f})'
                 )
@@ -1437,12 +1437,12 @@ def adjust_citizen_balance(user_id):
         amount = form.amount.data
         if form.operation.data == 'add':
             citizen.bank_account.balance += amount
-            desc_type = 'government_adjustment_add'
+            desc_type = 'gov_add' # FIXED: Was 'government_adjustment_add'
             flash(f'Se añadieron ${amount} a la cuenta.')
             notify_discord_bot(citizen, f"📈 **Ajuste de Saldo (Gobierno)**\nSe han AÑADIDO ${amount:,.2f} a tu cuenta.\nRazón: {form.reason.data}")
         else:
             citizen.bank_account.balance -= amount
-            desc_type = 'government_adjustment_sub'
+            desc_type = 'gov_sub' # FIXED: Was 'government_adjustment_sub'
             flash(f'Se quitaron ${amount} de la cuenta.')
             notify_discord_bot(citizen, f"📉 **Ajuste de Saldo (Gobierno)**\nSe han RETIRADO ${amount:,.2f} de tu cuenta.\nRazón: {form.reason.data}")
 
