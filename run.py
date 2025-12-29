@@ -56,8 +56,10 @@ with app.app_context():
 
         # 3. Inicializar Lotería y Fondo (Si no existen)
         if not GovernmentFund.query.first():
-            db.session.add(GovernmentFund(balance=1000000.0))
-            print("💰 Fondo de Gobierno inicializado.")
+            # INICIALIZACIÓN EN 0.0 (PETICIÓN DE USUARIO)
+            # Se inicia vacío para que el usuario establezca la cantidad específica manualmente en el panel.
+            db.session.add(GovernmentFund(balance=0.0))
+            print("💰 Fondo de Gobierno inicializado en 0.00.")
         
         if not Lottery.query.first():
             from datetime import datetime
