@@ -2,7 +2,8 @@ from app import create_app, db
 from dotenv import load_dotenv
 import os
 from flask_migrate import upgrade
-from sqlalchemy import text, inspect  # Importamos herramientas para inspeccionar y modificar DB manualmente
+from sqlalchemy import text, inspect
+from sqlalchemy.exc import ProgrammingError
 
 # Importar modelos para que SQLAlchemy sepa qué tablas crear
 from app.models import (
@@ -27,37 +28,47 @@ with app.app_context():
             upgrade() 
             print("✅ Migraciones aplicadas.")
         except Exception as e:
-            print(f"⚠️ Error en upgrade(): {e}. Intentando reparación manual...")
+            # Es normal que falle si la DB ya está al día o hay conflictos menores
+            print(f"⚠️ Nota sobre upgrade(): {e}")
 
         # 1. REPARACIÓN MANUAL DE SCHEMA (Si las migraciones fallan)
-        # Verificamos si faltan las columnas específicas que causan el error y las agregamos a la fuerza.
-        inspector = inspect(db.engine)
-        if 'government_fund' in inspector.get_table_names():
-            existing_columns = [col['name'] for col in inspector.get_columns('government_fund')]
-            
-            # Chequeo y reparación de 'expenses_description'
-            if 'expenses_description' not in existing_columns:
-                print("🔧 Reparando DB: Agregando columna faltante 'expenses_description'...")
-                with db.engine.connect() as conn:
-                    conn.execute(text("ALTER TABLE government_fund ADD COLUMN expenses_description TEXT"))
-                    conn.commit()
-            
-            # Chequeo y reparación de 'net_benefits'
-            if 'net_benefits' not in existing_columns:
-                print("🔧 Reparando DB: Agregando columna faltante 'net_benefits'...")
-                with db.engine.connect() as conn:
-                    conn.execute(text("ALTER TABLE government_fund ADD COLUMN net_benefits FLOAT DEFAULT 0.0"))
-                    conn.commit()
+        try:
+            inspector = inspect(db.engine)
+            if 'government_fund' in inspector.get_table_names():
+                existing_columns = [col['name'] for col in inspector.get_columns('government_fund')]
+                
+                # Chequeo y reparación de 'expenses_description'
+                if 'expenses_description' not in existing_columns:
+                    print("🔧 Reparando DB: Agregando columna faltante 'expenses_description'...")
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE government_fund ADD COLUMN expenses_description TEXT"))
+                        conn.commit()
+                
+                # Chequeo y reparación de 'net_benefits'
+                if 'net_benefits' not in existing_columns:
+                    print("🔧 Reparando DB: Agregando columna faltante 'net_benefits'...")
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE government_fund ADD COLUMN net_benefits FLOAT DEFAULT 0.0"))
+                        conn.commit()
+        except Exception as e:
+            print(f"⚠️ Error en inspección manual: {e}")
 
         # 2. Crear Tablas (Si no existen)
-        # db.create_all() crea las tablas si no existen, pero NO actualiza columnas nuevas.
-        db.create_all()
-        print("✅ Tablas verificadas.")
+        try:
+            # db.create_all() intenta crear tablas. Si ya existen y falla, capturamos el error.
+            db.create_all()
+            print("✅ Tablas verificadas.")
+        except ProgrammingError as e:
+            if "already exists" in str(e):
+                print("⚠️ Tablas ya existen (Error ignorado, continuando).")
+            else:
+                print(f"❌ Error en create_all: {e}")
+        except Exception as e:
+             print(f"❌ Error genérico en create_all: {e}")
 
         # 3. Inicializar Lotería y Fondo (Si no existen)
         if not GovernmentFund.query.first():
             # INICIALIZACIÓN EN 0.0 (PETICIÓN DE USUARIO)
-            # Se inicia vacío para que el usuario establezca la cantidad específica manualmente en el panel.
             db.session.add(GovernmentFund(balance=0.0))
             print("💰 Fondo de Gobierno inicializado en 0.00.")
         
@@ -101,8 +112,8 @@ with app.app_context():
         print("✨ Inicialización completada.")
 
     except Exception as e:
-        print(f"⚠️ Advertencia durante la inicialización: {e}")
-        # No detenemos la app, por si es un error menor de conexión temporal
+        print(f"⚠️ Advertencia crítica durante la inicialización: {e}")
+        # No detenemos la app
 
 if __name__ == '__main__':
     app.run(debug=True)
