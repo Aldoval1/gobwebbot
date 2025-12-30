@@ -10,7 +10,7 @@ from app.forms import (
     SearchUserForm, CriminalRecordForm, TrafficFineForm, CommentForm,
     TransferForm, LoanForm, LoanRepayForm, SavingsForm, CardCustomizationForm,
     LotteryTicketForm, AdjustBalanceForm, GovFundAdjustForm, SalaryForm, AppointmentForm,
-    CreateLeaderForm, GovFinancialsForm
+    CreateLeaderForm, GovFinancialsForm, EditCitizenForm, EditCitizenPhotoForm
 )
 from app.models import (
     User, Comment, TrafficFine, License, CriminalRecord,
@@ -1317,12 +1317,17 @@ def citizen_profile(user_id):
     fine_form = TrafficFineForm()
     criminal_form = CriminalRecordForm()
     adjust_balance_form = AdjustBalanceForm()
+    
+    # Nuevos formularios
+    edit_info_form = EditCitizenForm(obj=citizen)
+    edit_photos_form = EditCitizenPhotoForm()
 
     return render_template('citizen_profile.html', citizen=citizen,
                            can_edit=can_edit_reports,
                            can_adjust_balance=can_adjust_balance,
                            comment_form=comment_form, fine_form=fine_form,
-                           criminal_form=criminal_form, adjust_balance_form=adjust_balance_form)
+                           criminal_form=criminal_form, adjust_balance_form=adjust_balance_form,
+                           edit_info_form=edit_info_form, edit_photos_form=edit_photos_form)
 
 @bp.route('/official/citizen/<int:user_id>/add_comment', methods=['POST'])
 @login_required
@@ -1457,4 +1462,84 @@ def adjust_citizen_balance(user_id):
         db.session.add(trans)
         db.session.commit()
 
+    return redirect(url_for('main.citizen_profile', user_id=user_id))
+
+# --- NUEVAS RUTAS ADMINISTRATIVAS DE GOBIERNO ---
+
+@bp.route('/official/citizen/<int:user_id>/edit_info', methods=['POST'])
+@login_required
+def edit_citizen_info(user_id):
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.citizen_profile', user_id=user_id))
+    
+    user = User.query.get_or_404(user_id)
+    form = EditCitizenForm()
+    
+    if form.validate_on_submit():
+        user.first_name = form.first_name.data
+        user.last_name = form.last_name.data
+        user.dni = form.dni.data
+        db.session.commit()
+        flash('Información personal actualizada exitosamente.')
+    else:
+        flash('Error al actualizar información.')
+    
+    return redirect(url_for('main.citizen_profile', user_id=user_id))
+
+@bp.route('/official/citizen/<int:user_id>/update_photos', methods=['POST'])
+@login_required
+def update_citizen_photos(user_id):
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.citizen_profile', user_id=user_id))
+
+    user = User.query.get_or_404(user_id)
+    form = EditCitizenPhotoForm()
+
+    if form.validate_on_submit():
+        if form.selfie.data:
+            f = form.selfie.data
+            filename = secure_filename(f.filename)
+            f.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+            user.selfie_filename = filename
+        
+        if form.dni_photo.data:
+            f = form.dni_photo.data
+            filename = secure_filename(f.filename)
+            f.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+            user.dni_photo_filename = filename
+            
+        db.session.commit()
+        flash('Fotos actualizadas exitosamente.')
+    else:
+        flash('Error al subir fotos. Verifica el formato.')
+
+    return redirect(url_for('main.citizen_profile', user_id=user_id))
+
+@bp.route('/official/citizen/<int:user_id>/unlink_discord', methods=['POST'])
+@login_required
+def unlink_discord(user_id):
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.citizen_profile', user_id=user_id))
+        
+    user = User.query.get_or_404(user_id)
+    user.discord_id = None
+    db.session.commit()
+    flash('Discord desvinculado exitosamente.')
+    return redirect(url_for('main.citizen_profile', user_id=user_id))
+
+@bp.route('/official/citizen/<int:user_id>/clear_records', methods=['POST'])
+@login_required
+def clear_criminal_records(user_id):
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.citizen_profile', user_id=user_id))
+        
+    user = User.query.get_or_404(user_id)
+    # Borrar todos los antecedentes de este usuario específico
+    count = CriminalRecord.query.filter_by(user_id=user.id).delete()
+    db.session.commit()
+    flash(f'Se han borrado {count} antecedentes penales de este ciudadano.')
     return redirect(url_for('main.citizen_profile', user_id=user_id))
