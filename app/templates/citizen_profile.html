@@ -3,426 +3,424 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil Ciudadano - {{ citizen.first_name }} {{ citizen.last_name }}</title>
+    <title>Perfil Ciudadano: {{ citizen.first_name }} {{ citizen.last_name }}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ecf0f1;
-            margin: 0;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
+        body { background-color: #f8f9fa; }
         .profile-header {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 20px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            color: white;
+            padding: 30px 0;
+            margin-bottom: 30px;
         }
         .profile-img {
             width: 150px;
             height: 150px;
             object-fit: cover;
-            border-radius: 8px;
-            border: 1px solid #ccc;
+            border-radius: 50%;
+            border: 5px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
-        .profile-info h1 {
-            margin: 0;
-            color: #2c3e50;
-        }
-        .profile-info p {
-            margin: 5px 0;
-            color: #7f8c8d;
-            font-size: 18px;
-        }
-        .sections {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-        }
-        .section {
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 15px;
-        }
-        .section h2 {
-            margin-top: 0;
-            color: #34495e;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .record-list {
-            list-style: none;
-            padding: 0;
-        }
-        .record-item {
-            background-color: #f9f9f9;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            border-left: 4px solid #bdc3c7;
-        }
-        .record-item.fine { border-left-color: #e74c3c; }
-        .record-item.criminal { border-left-color: #2c3e50; cursor: pointer; }
-        .record-item.license { border-left-color: #27ae60; }
-
-        .record-meta {
-            font-size: 12px;
-            color: #95a5a6;
-            margin-bottom: 5px;
-        }
-        .record-content {
-            font-size: 14px;
-        }
-        .back-link {
-            display: inline-block;
-            margin-bottom: 20px;
-            color: #7f8c8d;
-            text-decoration: none;
-        }
-
-        /* Dropdown Button */
-        .dropdown {
-            position: relative;
-            display: inline-block;
-            margin-bottom: 20px;
-        }
-
-        .dropbtn {
-            background-color: #3498db;
-            color: white;
-            padding: 10px 20px;
-            font-size: 16px;
-            border: none;
-            cursor: pointer;
-            border-radius: 4px;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 200px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-            border-radius: 4px;
-        }
-
-        .dropdown-content a {
-            color: black;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            cursor: pointer;
-        }
-
-        .dropdown-content a:hover {background-color: #f1f1f1}
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
-        .dropdown:hover .dropbtn {
-            background-color: #2980b9;
-        }
-
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgb(0,0,0);
-            background-color: rgba(0,0,0,0.4);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
+        .section-card {
+            background: white;
+            border-radius: 10px;
             padding: 20px;
-            border: 1px solid #888;
-            width: 60%;
-            border-radius: 8px;
-            max-height: 80vh;
-            overflow-y: auto;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        input, textarea, select {
-            width: 100%;
-            padding: 8px;
-            margin: 5px 0 15px 0;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button[type="submit"] {
-            background-color: #2980b9;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .gallery {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 10px;
-        }
-        .gallery img {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border: 1px solid #ccc;
-            cursor: pointer;
+        .dni-card {
+            max-width: 300px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <a href="{{ url_for('main.official_database') }}" class="back-link">← Volver a la Base de Datos</a>
 
-        <div class="profile-header">
-            <img src="{{ url_for('static', filename='img/' + (citizen.selfie_filename if citizen.selfie_filename else 'default.jpg')) }}" alt="Foto de {{ citizen.first_name }}" class="profile-img">
-            <div class="profile-info">
-                <h1>{{ citizen.first_name }} {{ citizen.last_name }}</h1>
-                <p><strong>DNI:</strong> {{ citizen.dni }}</p>
-                <p><strong>Estado Civil:</strong> Soltero/a (Ejemplo)</p>
-            </div>
+    <!-- Header / Navbar simple -->
+    <nav class="navbar navbar-dark bg-dark mb-0">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.official_dashboard') }}">← Volver al Panel Oficial</a>
+            <span class="navbar-text">
+                Logueado como: {{ current_user.first_name }} {{ current_user.last_name }} ({{ current_user.department }})
+            </span>
         </div>
+    </nav>
 
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div style="background: #dff0d8; padding: 10px; margin-bottom: 20px; border-radius: 4px; color: #3c763d;">
-                        {{ message }}
-                    </div>
-                {% endfor %}
+    <!-- Profile Header -->
+    <div class="profile-header text-center">
+        <div class="container">
+            <img src="{{ url_for('static', filename='uploads/' + citizen.selfie_filename) }}" alt="Foto Perfil" class="profile-img mb-3">
+            <h1>{{ citizen.first_name }} {{ citizen.last_name }}</h1>
+            <p class="lead">DNI: {{ citizen.dni }}</p>
+            {% if citizen.discord_id %}
+                <span class="badge bg-primary">Discord Vinculado</span>
+            {% else %}
+                <span class="badge bg-secondary">Sin Discord</span>
             {% endif %}
-        {% endwith %}
-
-        {% if can_edit %}
-        <div class="dropdown">
-            <button class="dropbtn">Gestionar ▼</button>
-            <div class="dropdown-content">
-                <a onclick="openModal('commentModal')">Agregar Comentario</a>
-                <a onclick="openModal('fineModal')">Agregar Multa</a>
-                {% if can_edit %}
-                <a onclick="openModal('criminalModal')">Agregar Antecedente</a>
-                {% endif %}
-                {% if can_adjust_balance %}
-                <a onclick="openModal('balanceModal')">Ajustar Saldo Bancario</a>
-                {% endif %}
-            </div>
         </div>
-        {% endif %}
+    </div>
 
-        <div class="sections">
-            <!-- Comments (formerly Police Reports) -->
-            <div class="section">
-                <h2>Comentarios</h2>
-                <ul class="record-list">
-                    {% for comment in citizen.comments %}
-                    <li class="record-item">
-                        <div class="record-meta">{{ comment.date.strftime('%d/%m/%Y') }} - Por: {{ comment.author.first_name }} {{ comment.author.last_name }}</div>
-                        <div class="record-content">{{ comment.content }}</div>
-                    </li>
-                    {% else %}
-                    <p style="color: #bdc3c7;">No hay comentarios registrados.</p>
-                    {% endfor %}
-                </ul>
-            </div>
-
-            <!-- Fines -->
-            <div class="section">
-                <h2>Solo Multas</h2>
-                <ul class="record-list">
-                    {% for fine in citizen.traffic_fines %}
-                    <li class="record-item fine">
-                        <div class="record-meta">{{ fine.date.strftime('%d/%m/%Y') }} - Por: {{ fine.author.first_name }} {{ fine.author.last_name }} - Estado: {{ fine.status }}</div>
-                        <div class="record-content"><strong>${{ fine.amount }}</strong> - {{ fine.reason }}</div>
-                    </li>
-                    {% else %}
-                    <p style="color: #bdc3c7;">No hay multas registradas.</p>
-                    {% endfor %}
-                </ul>
-            </div>
-
-            <!-- Licenses -->
-            <div class="section">
-                <h2>Licencias Activas</h2>
-                <ul class="record-list">
-                    {% for license in citizen.licenses %}
-                    <li class="record-item license">
-                        <div class="record-meta">Vence: {{ license.expiration_date.strftime('%d/%m/%Y') if license.expiration_date else 'N/A' }}</div>
-                        <div class="record-content"><strong>{{ license.type }}</strong> - {{ license.status }}</div>
-                    </li>
-                    {% else %}
-                    <p style="color: #bdc3c7;">No posee licencias activas.</p>
-                    {% endfor %}
-                </ul>
-            </div>
-
-            <!-- Criminal Records -->
-            <div class="section">
-                <h2>Antecedentes Penales</h2>
-                <ul class="record-list">
-                    {% for record in citizen.criminal_records %}
-                    <li class="record-item criminal" onclick="openDetailModal('record-{{ record.id }}')">
-                        <div class="record-meta">{{ record.date.strftime('%d/%m/%Y') }} - Por: {{ record.author.first_name }} {{ record.author.last_name }}</div>
-                        <div class="record-content">
-                            <strong>{{ record.crime }}</strong> (CP: {{ record.penal_code }})
-                        </div>
-                    </li>
-
-                    <!-- Detail Modal for each record -->
-                    <div id="record-{{ record.id }}" class="modal">
-                        <div class="modal-content">
-                            <span class="close" onclick="closeModal('record-{{ record.id }}')">&times;</span>
-                            <h3>Detalle de Antecedente Penal</h3>
-                            <p><strong>Delito:</strong> {{ record.crime }}</p>
-                            <p><strong>Código Penal:</strong> {{ record.penal_code }}</p>
-                            <p><strong>Fecha:</strong> {{ record.date.strftime('%d/%m/%Y') }}</p>
-                            <p><strong>Oficial a cargo:</strong> {{ record.author.first_name }} {{ record.author.last_name }}</p>
-                            <hr>
-                            <h4>Informe</h4>
-                            <p>{{ record.report_text }}</p>
-
-                            <h4>Fotos del Sujeto</h4>
-                            <div class="gallery">
-                                {% for photo in record.subject_photos %}
-                                    <a href="{{ url_for('static', filename='img/' + photo.filename) }}" target="_blank">
-                                        <img src="{{ url_for('static', filename='img/' + photo.filename) }}">
-                                    </a>
-                                {% else %}
-                                    <p>No hay fotos del sujeto.</p>
-                                {% endfor %}
-                            </div>
-
-                            <h4>Evidencia</h4>
-                            <div class="gallery">
-                                {% for photo in record.evidence_photos %}
-                                    <a href="{{ url_for('static', filename='img/' + photo.filename) }}" target="_blank">
-                                        <img src="{{ url_for('static', filename='img/' + photo.filename) }}">
-                                    </a>
-                                {% else %}
-                                    <p>No hay evidencia fotográfica.</p>
-                                {% endfor %}
-                            </div>
-                        </div>
+    <div class="container">
+        <div class="row">
+            <!-- Left Column: Personal Info & Bank -->
+            <div class="col-md-4">
+                <div class="section-card">
+                    <h4>Datos Personales</h4>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item"><strong>Nombre:</strong> {{ citizen.first_name }}</li>
+                        <li class="list-group-item"><strong>Apellido:</strong> {{ citizen.last_name }}</li>
+                        <li class="list-group-item"><strong>DNI:</strong> {{ citizen.dni }}</li>
+                        <li class="list-group-item"><strong>Estado:</strong> Ciudadano</li>
+                    </ul>
+                    <div class="mt-3 text-center">
+                        <label class="form-label text-muted">Foto DNI:</label><br>
+                        <img src="{{ url_for('static', filename='uploads/' + citizen.dni_photo_filename) }}" class="dni-card img-fluid" alt="DNI Foto">
                     </div>
+                </div>
+
+                <div class="section-card">
+                    <h4>Información Bancaria</h4>
+                    {% if citizen.bank_account %}
+                        <p><strong>Cuenta:</strong> {{ citizen.bank_account.account_number }}</p>
+                        <h3 class="text-success">${{ "{:,.2f}".format(citizen.bank_account.balance) }}</h3>
                     {% else %}
-                    <p style="color: #bdc3c7;">No tiene antecedentes penales.</p>
-                    {% endfor %}
-                </ul>
+                        <p class="text-muted">Este ciudadano no tiene cuenta bancaria.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Licencias -->
+                <div class="section-card">
+                    <h4>Licencias</h4>
+                    {% if citizen.licenses %}
+                        <ul class="list-group">
+                        {% for lic in citizen.licenses %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                {{ lic.type }}
+                                <span class="badge bg-{{ 'success' if lic.status == 'Activa' else 'danger' }}">{{ lic.status }}</span>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">No posee licencias.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Notas / Comentarios -->
+                <div class="section-card">
+                    <h4>Notas Oficiales</h4>
+                    {% if citizen.comments %}
+                        <div style="max-height: 200px; overflow-y: auto;" class="mb-3">
+                            {% for comment in citizen.comments %}
+                                <div class="border-bottom pb-2 mb-2">
+                                    <small class="text-muted">{{ comment.created_at.strftime('%d/%m/%Y') }} - {{ comment.author.first_name }} {{ comment.author.last_name }} ({{ comment.author.department }})</small>
+                                    <p class="mb-0">{{ comment.content }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small">Sin comentarios.</p>
+                    {% endif %}
+
+                    {% if can_edit %}
+                    <form action="{{ url_for('main.add_comment', user_id=citizen.id) }}" method="POST">
+                        {{ comment_form.hidden_tag() }}
+                        <div class="input-group">
+                            {{ comment_form.content(class="form-control", placeholder="Agregar nota...", rows=1) }}
+                            <button class="btn btn-outline-secondary" type="submit">Add</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Column: Actions & Records -->
+            <div class="col-md-8">
+                
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category if category != 'message' else 'info' }}">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+
+                <!-- Panel de Control Financiero (Solo Gobierno) -->
+                {% if can_adjust_balance %}
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">Control Financiero (Gobierno)</h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('main.adjust_citizen_balance', user_id=citizen.id) }}" method="POST">
+                            {{ adjust_balance_form.hidden_tag() }}
+                            <div class="mb-3">
+                                <label class="form-label">Operación</label>
+                                {{ adjust_balance_form.operation(class="form-select") }}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Cantidad</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    {{ adjust_balance_form.amount(class="form-control", placeholder="0.00") }}
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Razón / Motivo</label>
+                                {{ adjust_balance_form.reason(class="form-control", rows=2) }}
+                            </div>
+                            <button type="submit" class="btn btn-dark w-100">Aplicar Ajuste</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- NUEVO: Panel de Administración de Identidad (Solo Gobierno) -->
+                <div class="card mb-4 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">Administración de Identidad</h5>
+                    </div>
+                    <div class="card-body d-grid gap-2">
+                        <button class="btn btn-outline-danger" onclick="openModal('editInfoModal')">
+                            📝 Editar Nombre y DNI
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="openModal('editPhotosModal')">
+                            📷 Actualizar Fotos
+                        </button>
+                        
+                        <form action="{{ url_for('main.unlink_discord', user_id=citizen.id) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres desvincular el Discord?');">
+                            <button type="submit" class="btn btn-outline-dark w-100">
+                                🔌 Desvincular Discord
+                            </button>
+                        </form>
+
+                        <form action="{{ url_for('main.clear_criminal_records', user_id=citizen.id) }}" method="POST" onsubmit="return confirm('¿ESTÁS SEGURO? Esto borrará TODOS los antecedentes penales de este usuario permanentemente.');">
+                            <button type="submit" class="btn btn-dark w-100 fw-bold">
+                                🗑️ BORRAR ANTECEDENTES
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Antecedentes Penales -->
+                <div class="section-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0 text-danger">Antecedentes Penales</h4>
+                        {% if can_edit %}
+                        <button class="btn btn-sm btn-danger" onclick="openModal('criminalModal')">+ Nuevo Registro</button>
+                        {% endif %}
+                    </div>
+                    
+                    {% if citizen.criminal_records %}
+                        <div class="accordion" id="criminalAccordion">
+                            {% for record in citizen.criminal_records %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading{{ record.id }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ record.id }}">
+                                        {{ record.date.strftime('%d/%m/%Y') }} - {{ record.crime }} (Oficial: {{ record.author.last_name }})
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ record.id }}" class="accordion-collapse collapse" data-bs-parent="#criminalAccordion">
+                                    <div class="accordion-body">
+                                        <p><strong>Código Penal:</strong> {{ record.penal_code }}</p>
+                                        <p><strong>Informe:</strong> {{ record.report_text }}</p>
+                                        <!-- Fotos si las hubiera -->
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">Este ciudadano no tiene antecedentes registrados.</div>
+                    {% endif %}
+                </div>
+
+                <!-- Multas de Tráfico -->
+                <div class="section-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0 text-warning">Multas de Tráfico</h4>
+                        {% if can_edit %}
+                        <button class="btn btn-sm btn-warning text-white" onclick="openModal('fineModal')">+ Nueva Multa</button>
+                        {% endif %}
+                    </div>
+                    
+                    {% if citizen.traffic_fines %}
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Monto</th>
+                                        <th>Razón</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for fine in citizen.traffic_fines %}
+                                    <tr>
+                                        <td>{{ fine.created_at.strftime('%d/%m') }}</td>
+                                        <td>${{ fine.amount }}</td>
+                                        <td>{{ fine.reason }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if fine.status == 'Pagada' else 'danger' }}">
+                                                {{ fine.status }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="text-muted">Sin multas registradas.</p>
+                    {% endif %}
+                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- Modals (Only rendered if permission exists, or hidden) -->
+    <!-- Modals -->
     {% if can_edit %}
-    <!-- Comment Modal -->
-    <div id="commentModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('commentModal')">&times;</span>
-            <h3>Nuevo Comentario</h3>
-            <form action="{{ url_for('main.add_comment', user_id=citizen.id) }}" method="POST">
-                {{ comment_form.hidden_tag() }}
-                {{ comment_form.content(placeholder="Escriba el comentario aquí...") }}
-                <button type="submit">Agregar Comentario</button>
-            </form>
+    <!-- Modal Criminal Record -->
+    <div id="criminalModal" class="modal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registrar Antecedente Penal</h5>
+                    <button type="button" class="btn-close" onclick="closeModal('criminalModal')"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('main.add_criminal_record', user_id=citizen.id) }}" method="POST" enctype="multipart/form-data">
+                        {{ criminal_form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label class="form-label">Fecha del Hecho</label>
+                            {{ criminal_form.date(class="form-control", type="date") }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Delito</label>
+                            {{ criminal_form.crime(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Código Penal</label>
+                            {{ criminal_form.penal_code(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Informe</label>
+                            {{ criminal_form.report_text(class="form-control", rows=3) }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fotos Sujeto (Opcional)</label>
+                            {{ criminal_form.subject_photos(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fotos Evidencia (Opcional)</label>
+                            {{ criminal_form.evidence_photos(class="form-control") }}
+                        </div>
+                        <button type="submit" class="btn btn-danger w-100">Guardar Antecedente</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Fine Modal -->
-    <div id="fineModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('fineModal')">&times;</span>
-            <h3>Nueva Multa</h3>
-            <form action="{{ url_for('main.add_traffic_fine', user_id=citizen.id) }}" method="POST">
-                {{ fine_form.hidden_tag() }}
-                {{ fine_form.amount(placeholder="Monto ($)") }}
-                {{ fine_form.reason(placeholder="Motivo de la multa") }}
-                <button type="submit">Imponer Multa</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Criminal Record Modal -->
-    <div id="criminalModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('criminalModal')">&times;</span>
-            <h3>Nuevo Antecedente Penal</h3>
-            <form action="{{ url_for('main.add_criminal_record', user_id=citizen.id) }}" method="POST" enctype="multipart/form-data">
-                {{ criminal_form.hidden_tag() }}
-                <label>Fecha del Suceso</label>
-                {{ criminal_form.date() }}
-                {{ criminal_form.crime(placeholder="Delito Cometido") }}
-                {{ criminal_form.penal_code(placeholder="Código Penal Infringido") }}
-                {{ criminal_form.report_text(placeholder="Informe Detallado") }}
-                <label>Fotos del Sujeto (Selecciona varias)</label>
-                {{ criminal_form.subject_photos(multiple="multiple") }}
-                <label>Evidencia Fotográfica (Selecciona varias)</label>
-                {{ criminal_form.evidence_photos(multiple="multiple") }}
-                <button type="submit">Registrar Antecedente</button>
-            </form>
-        </div>
-    </div>
-
-    {% if can_adjust_balance %}
-    <!-- Balance Modal -->
-    <div id="balanceModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('balanceModal')">&times;</span>
-            <h3>Ajustar Saldo Bancario</h3>
-            <p>Saldo Actual: ${{ "{:,.2f}".format(citizen.bank_account.balance) if citizen.bank_account else '0.00' }}</p>
-            <form action="{{ url_for('main.adjust_citizen_balance', user_id=citizen.id) }}" method="POST">
-                {{ adjust_balance_form.hidden_tag() }}
-                {{ adjust_balance_form.operation() }}
-                {{ adjust_balance_form.amount(placeholder="Cantidad") }}
-                {{ adjust_balance_form.reason(placeholder="Motivo del ajuste") }}
-                <button type="submit" style="background-color: #f39c12;">Aplicar Ajuste</button>
-            </form>
+    <!-- Modal Traffic Fine -->
+    <div id="fineModal" class="modal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Imponer Multa</h5>
+                    <button type="button" class="btn-close" onclick="closeModal('fineModal')"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('main.add_traffic_fine', user_id=citizen.id) }}" method="POST">
+                        {{ fine_form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label class="form-label">Monto</label>
+                            {{ fine_form.amount(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Razón</label>
+                            {{ fine_form.reason(class="form-control") }}
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">Imponer Multa</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
     {% endif %}
+
+    {% if can_adjust_balance %}
+    <!-- Modal Editar Info -->
+    <div id="editInfoModal" class="modal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Información Personal</h5>
+                    <button type="button" class="btn-close" onclick="closeModal('editInfoModal')"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('main.edit_citizen_info', user_id=citizen.id) }}" method="POST">
+                        {{ edit_info_form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            {{ edit_info_form.first_name(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Apellido</label>
+                            {{ edit_info_form.last_name(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">DNI</label>
+                            {{ edit_info_form.dni(class="form-control") }}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Guardar Cambios</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Fotos -->
+    <div id="editPhotosModal" class="modal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Actualizar Fotos</h5>
+                    <button type="button" class="btn-close" onclick="closeModal('editPhotosModal')"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('main.update_citizen_photos', user_id=citizen.id) }}" method="POST" enctype="multipart/form-data">
+                        {{ edit_photos_form.hidden_tag() }}
+                        <div class="mb-3">
+                            <label class="form-label">Nueva Selfie</label>
+                            {{ edit_photos_form.selfie(class="form-control") }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nueva Foto DNI</label>
+                            {{ edit_photos_form.dni_photo(class="form-control") }}
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Subir Fotos</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 
     <script>
         function openModal(id) {
             document.getElementById(id).style.display = "block";
-        }
-        function openDetailModal(id) {
-            document.getElementById(id).style.display = "block";
+            document.getElementById(id).classList.add('show');
         }
         function closeModal(id) {
             document.getElementById(id).style.display = "none";
+            document.getElementById(id).classList.remove('show');
         }
+        // Close modal when clicking outside
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = "none";
