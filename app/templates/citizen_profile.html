@@ -117,7 +117,8 @@
                         <div style="max-height: 200px; overflow-y: auto;" class="mb-3">
                             {% for comment in citizen.comments %}
                                 <div class="border-bottom pb-2 mb-2">
-                                    <small class="text-muted">{{ comment.created_at.strftime('%d/%m/%Y') }} - {{ comment.author.first_name }} {{ comment.author.last_name }} ({{ comment.author.department }})</small>
+                                    <!-- CORRECCION: cambiado created_at por timestamp -->
+                                    <small class="text-muted">{{ comment.timestamp.strftime('%d/%m/%Y') }} - {{ comment.author.first_name }} {{ comment.author.last_name }} ({{ comment.author.department }})</small>
                                     <p class="mb-0">{{ comment.content }}</p>
                                 </div>
                             {% endfor %}
