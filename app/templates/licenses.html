@@ -5,21 +5,45 @@
     <title>Gestión de Licencias</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome para iconos de zoom -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background-color: #f8f9fa; }
         .container-main { max-width: 900px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .map-container {
+        
+        /* Contenedor del Mapa con Zoom */
+        .map-wrapper {
             position: relative;
             width: 100%;
-            max-width: 100%;
-            overflow: hidden;
+            height: 400px; /* Altura fija para el contenedor */
+            overflow: hidden; /* Ocultar lo que se salga */
             border: 2px solid #ccc;
-            cursor: crosshair;
+            border-radius: 8px;
+            background-color: #e9ecef;
         }
+        
+        .map-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: 0 0; /* Zoom desde la esquina superior izquierda por defecto, ajustado por JS */
+            transition: transform 0.1s ease-out; /* Suavizar el zoom */
+            cursor: grab;
+        }
+
+        .map-content:active {
+            cursor: grabbing;
+        }
+
         .map-image {
             width: 100%;
-            display: block;
+            height: 100%;
+            object-fit: contain; /* Ajustar imagen */
+            pointer-events: none; /* Evitar arrastrar la imagen fantasma del navegador */
         }
+
         .map-marker {
             position: absolute;
             width: 20px;
@@ -27,10 +51,51 @@
             background-color: red;
             border-radius: 50%;
             transform: translate(-50%, -50%);
-            pointer-events: none;
-            display: none;
             border: 2px solid white;
             box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 10;
+        }
+
+        /* Controles de Zoom */
+        .zoom-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 20;
+        }
+
+        .zoom-btn {
+            width: 35px;
+            height: 35px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .zoom-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Etiqueta de Precio Dinámica */
+        .price-badge {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 10px 15px;
+            border-radius: 8px;
+            background-color: #28a745;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
     </style>
 </head>
@@ -113,7 +178,7 @@
 
     <!-- MODAL REGISTRO DE NEGOCIO -->
     <div class="modal fade" id="businessModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl"> <!-- Modal más ancho para el mapa -->
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Registrar Nuevo Negocio</h5>
@@ -124,27 +189,49 @@
                         {{ business_form.hidden_tag() }}
                         
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="mb-3">
                                     <label class="form-label">Nombre del Negocio</label>
                                     {{ business_form.name(class="form-control", placeholder="Ej: Bar de Moe") }}
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-3 position-relative">
                                     <label class="form-label">Tipo de Negocio</label>
-                                    {{ business_form.business_type(class="form-select") }}
-                                    <small class="text-muted">El costo varía según el tipo.</small>
+                                    {{ business_form.business_type(class="form-select", id="businessTypeSelect", onchange="updatePrice()") }}
+                                    <small class="text-muted">Selecciona para ver el costo.</small>
+                                    
+                                    <!-- Etiqueta de Precio Flotante -->
+                                    <div class="mt-3 text-center">
+                                        <div class="price-badge">
+                                            Total a Pagar: <span id="priceDisplay">$4,000</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Foto del Local (Exterior)</label>
                                     {{ business_form.photo(class="form-control") }}
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Ubicación en el Mapa (Click para marcar)</label>
-                                <div class="map-container" id="mapContainer">
-                                    <img src="{{ url_for('static', filename='img/mi_mapa.png') }}" class="map-image" alt="Mapa">
-                                    <div class="map-marker" id="mapMarker"></div>
+                            
+                            <div class="col-md-8">
+                                <label class="form-label d-flex justify-content-between">
+                                    <span>Ubicación en el Mapa (Click para marcar)</span>
+                                    <small class="text-muted">Usa +/- o la rueda del ratón para Zoom. Arrastra para mover.</small>
+                                </label>
+                                
+                                <div class="map-wrapper" id="mapWrapper">
+                                    <div class="map-content" id="mapContent">
+                                        <img src="{{ url_for('static', filename='img/mi_mapa.png') }}" class="map-image" alt="Mapa" draggable="false">
+                                        <div class="map-marker" id="mapMarker"></div>
+                                    </div>
+                                    
+                                    <!-- Controles de Zoom -->
+                                    <div class="zoom-controls">
+                                        <div class="zoom-btn" onclick="zoomMap(0.2)"><i class="fas fa-plus"></i></div>
+                                        <div class="zoom-btn" onclick="zoomMap(-0.2)"><i class="fas fa-minus"></i></div>
+                                        <div class="zoom-btn" onclick="resetZoom()"><i class="fas fa-compress"></i></div>
+                                    </div>
                                 </div>
+                                
                                 <!-- Campos ocultos para coordenadas -->
                                 {{ business_form.location_x(type="hidden", id="locX") }}
                                 {{ business_form.location_y(type="hidden", id="locY") }}
@@ -155,7 +242,7 @@
                             <strong>Nota:</strong> Al registrarse se cobrará automáticamente el costo de la licencia mensual.
                         </div>
 
-                        <button type="submit" class="btn btn-success w-100">Registrar y Pagar</button>
+                        <button type="submit" class="btn btn-success w-100 btn-lg">Registrar y Pagar</button>
                     </form>
                 </div>
             </div>
@@ -164,30 +251,151 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Lógica del Mapa Interactivo
-        const mapContainer = document.getElementById('mapContainer');
+        // --- LÓGICA DE PRECIOS ---
+        const prices = {
+            '247': 4000 + 3000,
+            'Pharmacy': 4000 + 2500,
+            'Mechanic': 4000 + 3500,
+            'Restaurant': 4000 + 3000,
+            'GasStation': 4000 + 3000,
+            'Club': 4000 + 3000,
+            'Bar': 4000 + 3000,
+            'UsedCars': 4000 + 2500,
+            'SexShop': 4000,
+            'Groceries': 4000,
+            'Hardware': 4000,
+            'Barber': 4000,
+            'Clothes': 4000
+        };
+
+        function updatePrice() {
+            const select = document.getElementById('businessTypeSelect');
+            const display = document.getElementById('priceDisplay');
+            const val = select.value;
+            
+            if (prices[val]) {
+                display.textContent = '$' + prices[val].toLocaleString();
+            } else {
+                display.textContent = '$4,000'; // Default base
+            }
+        }
+
+        // Inicializar precio al cargar
+        document.addEventListener('DOMContentLoaded', updatePrice);
+
+
+        // --- LÓGICA DEL MAPA (ZOOM + PAN + MARKER) ---
+        const wrapper = document.getElementById('mapWrapper');
+        const content = document.getElementById('mapContent');
         const marker = document.getElementById('mapMarker');
         const inputX = document.getElementById('locX');
         const inputY = document.getElementById('locY');
 
-        mapContainer.addEventListener('click', function(e) {
-            const rect = mapContainer.getBoundingClientRect();
+        let scale = 1;
+        let pannedX = 0;
+        let pannedY = 0;
+        let isDragging = false;
+        let startX, startY;
+
+        function updateTransform() {
+            content.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
+        }
+
+        // Zoom Buttons
+        window.zoomMap = function(delta) {
+            const prevScale = scale;
+            scale += delta;
+            scale = Math.min(Math.max(1, scale), 5); // Max zoom 5x, min 1x
+            
+            // Adjust pan to zoom towards center if zooming in from buttons (simplified)
+            // Or just keep center. For simplicity, we just scale.
+            
+            // Boundary checks to keep image filling container not needed as much for zoom in
+            if (scale === 1) {
+                pannedX = 0;
+                pannedY = 0;
+            }
+            updateTransform();
+        };
+
+        window.resetZoom = function() {
+            scale = 1;
+            pannedX = 0;
+            pannedY = 0;
+            updateTransform();
+        };
+
+        // Wheel Zoom
+        wrapper.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            const prevScale = scale;
+            scale += delta;
+            scale = Math.min(Math.max(1, scale), 5);
+            updateTransform();
+        });
+
+        // Panning (Drag)
+        content.addEventListener('mousedown', function(e) {
+            // Only drag if not clicking the marker directly (optional check)
+            isDragging = true;
+            startX = e.clientX - pannedX;
+            startY = e.clientY - pannedY;
+            content.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mouseup', function() {
+            isDragging = false;
+            content.style.cursor = 'grab';
+        });
+
+        window.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            pannedX = e.clientX - startX;
+            pannedY = e.clientY - startY;
+            
+            // Optional: Add boundaries calculation here to prevent dragging image out of view completely
+            // For now, free drag is user friendly enough if they have reset button.
+            
+            updateTransform();
+        });
+
+        // Placing Marker (Double Click to avoid conflict with Drag?) 
+        // Or simple Click but distinguish from drag.
+        // Let's use simple Click but check if it was a drag.
+        
+        let mouseDownPos = {};
+        
+        content.addEventListener('mousedown', (e) => {
+            mouseDownPos = { x: e.clientX, y: e.clientY };
+        });
+
+        content.addEventListener('click', function(e) {
+            // If moved significantly, it was a drag, so don't place marker
+            if (Math.abs(e.clientX - mouseDownPos.x) > 5 || Math.abs(e.clientY - mouseDownPos.y) > 5) {
+                return;
+            }
+
+            const rect = content.getBoundingClientRect();
+            // Calculate Click Position relative to the IMAGE (scaled content)
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            // Calcular porcentajes
+            // Calculate percentage relative to the actual image size (rect includes scale)
             const percentX = (x / rect.width) * 100;
             const percentY = (y / rect.height) * 100;
 
-            // Mover marcador
+            // Place marker
             marker.style.left = percentX + '%';
             marker.style.top = percentY + '%';
             marker.style.display = 'block';
 
-            // Guardar valores
+            // Save Inputs
             inputX.value = percentX.toFixed(2);
             inputY.value = percentY.toFixed(2);
         });
+
     </script>
 </body>
 </html>
