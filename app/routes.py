@@ -10,14 +10,14 @@ from app.forms import (
     SearchUserForm, CriminalRecordForm, TrafficFineForm, CommentForm,
     TransferForm, LoanForm, LoanRepayForm, SavingsForm, CardCustomizationForm,
     LotteryTicketForm, AdjustBalanceForm, GovFundAdjustForm, SalaryForm, AppointmentForm,
-    CreateLeaderForm, GovFinancialsForm, EditCitizenForm, EditCitizenPhotoForm
+    CreateLeaderForm, GovFinancialsForm, EditCitizenForm, EditCitizenPhotoForm, BusinessLicenseForm
 )
 from app.models import (
     User, Comment, TrafficFine, License, CriminalRecord,
     CriminalRecordSubjectPhoto, CriminalRecordEvidencePhoto,
     BankAccount, BankTransaction, BankLoan, BankSavings,
     Lottery, LotteryTicket, GovernmentFund, PayrollRequest, PayrollItem,
-    Appointment
+    Appointment, Business
 )
 from sqlalchemy import func
 from flask_login import current_user, login_user, logout_user, login_required
@@ -750,94 +750,178 @@ def licenses():
         return redirect(url_for('main.official_dashboard'))
 
     account = current_user.bank_account
-
-    # Precios de licencias
-    license_prices = {
+    
+    # Precios de licencias personales
+    personal_license_prices = {
         'Pilot': 10000,
-        'Operating': 4000,
-        'AlcoholTobacco': 3000,
-        'PharmaDrugs': 2500,
-        'VehicleRepair': 3500,
-        'Special': 3000,
         'Stripping': 3000
     }
-
+    
     license_names = {
         'Pilot': 'Licencia de Piloto',
-        'Operating': 'Licencia de Funcionamiento',
-        'AlcoholTobacco': 'Venta de Alcohol y Tabaco',
-        'PharmaDrugs': 'Venta de Drogas Fármacas',
-        'VehicleRepair': 'Reparación y Renovación de Vehículos',
-        'Special': 'Licencias Especiales',
         'Stripping': 'Licencia de Stripping'
     }
 
+    business_form = BusinessLicenseForm()
+
     if request.method == 'POST':
-        if not account:
-            flash('Necesitas una cuenta bancaria para comprar licencias.')
-            return redirect(url_for('main.licenses'))
+        # --- Lógica de Compra de Licencias Personales ---
+        if 'licenses' in request.form:
+            if not account:
+                flash('Necesitas una cuenta bancaria para comprar licencias.')
+                return redirect(url_for('main.licenses'))
 
-        selected_licenses = request.form.getlist('licenses')
-        if not selected_licenses:
-            flash('No seleccionaste ninguna licencia.')
-            return redirect(url_for('main.licenses'))
+            selected_licenses = request.form.getlist('licenses')
+            if not selected_licenses:
+                flash('No seleccionaste ninguna licencia.')
+                return redirect(url_for('main.licenses'))
 
-        # Validate licenses
-        valid_licenses = []
-        total_cost = 0
-        for lic in selected_licenses:
-            if lic in license_prices:
-                total_cost += license_prices[lic]
-                valid_licenses.append(lic)
+            total_cost = 0
+            valid_licenses = []
+            for lic in selected_licenses:
+                if lic in personal_license_prices:
+                    total_cost += personal_license_prices[lic]
+                    valid_licenses.append(lic)
 
-        if not valid_licenses:
-             flash('Licencias no válidas.')
-             return redirect(url_for('main.licenses'))
+            if account.balance < total_cost:
+                flash(f'Fondos insuficientes. Costo total: ${total_cost}')
+            else:
+                account.balance -= total_cost
+                expiration = datetime.utcnow().date() + timedelta(days=30)
+
+                for lic in valid_licenses:
+                    new_license = License(
+                        type=license_names.get(lic, lic),
+                        status='Activa',
+                        expiration_date=expiration,
+                        user_id=current_user.id
+                    )
+                    db.session.add(new_license)
+
+                trans = BankTransaction(
+                    account_id=account.id,
+                    type='purchase',
+                    amount=total_cost,
+                    description=f'Compra Licencias Personales ({len(valid_licenses)})'
+                )
+                db.session.add(trans)
+                db.session.commit()
+                flash(f'Compra realizada por ${total_cost}. Licencias añadidas.')
+                return redirect(url_for('main.licenses'))
+
+    return render_template('licenses.html', 
+                           personal_prices=personal_license_prices,
+                           active_licenses=current_user.licenses,
+                           business_form=business_form)
+
+@bp.route('/licenses/business/register', methods=['POST'])
+@login_required
+def register_business():
+    form = BusinessLicenseForm()
+    account = current_user.bank_account
+
+    if not account:
+        flash('Necesitas cuenta bancaria.')
+        return redirect(url_for('main.licenses'))
+
+    if form.validate_on_submit():
+        # Calcular Costo
+        base_cost = 4000 # Licencia de Funcionamiento
+        extra_cost = 0
+        extra_license_name = None
+
+        b_type = form.business_type.data
+        
+        # Mapa de costos adicionales y nombres
+        if b_type == '247':
+            extra_cost = 3000
+            extra_license_name = 'Venta Alcohol y Tabaco'
+        elif b_type == 'Pharmacy':
+            extra_cost = 2500
+            extra_license_name = 'Venta Drogas Farmacas'
+        elif b_type == 'Mechanic':
+            extra_cost = 3500
+            extra_license_name = 'Reparación de Vehículos'
+        elif b_type in ['Restaurant', 'GasStation', 'Club', 'Bar']:
+            extra_cost = 3000
+            extra_license_name = 'Venta Alcohol y Tabaco'
+        elif b_type == 'UsedCars':
+            extra_cost = 2500
+            extra_license_name = 'Venta Vehículos Usados'
+        
+        total_cost = base_cost + extra_cost
 
         if account.balance < total_cost:
-            flash(f'Fondos insuficientes. Costo total: ${total_cost}')
-        else:
-            account.balance -= total_cost
-
-            expiration = datetime.utcnow().date() + timedelta(days=30)
-
-            for lic in valid_licenses:
-                new_license = License(
-                    type=license_names.get(lic, lic),
-                    status='Activa',
-                    expiration_date=expiration,
-                    user_id=current_user.id
-                )
-                db.session.add(new_license)
-
-            # Transaction record
-            trans = BankTransaction(
-                account_id=account.id,
-                type='purchase',
-                amount=total_cost,
-                description=f'Compra de Licencias ({len(selected_licenses)})'
-            )
-            db.session.add(trans)
-            db.session.commit()
-
-            fund = get_gov_fund()
-            # fund.balance += total_cost # El usuario no especificó si va al gobierno, pero "dinero se saca de la cuenta". Asumiremos que se quema o va al net benefits si se quisiera, pero por ahora solo se resta del usuario.
-
-            flash(f'Compra realizada por ${total_cost}. Licencias añadidas.')
+            flash(f'Fondos insuficientes. El costo total es ${total_cost}.')
             return redirect(url_for('main.licenses'))
 
-    # Active licenses
-    active_licenses = []
-    if current_user.licenses:
-        for l in current_user.licenses:
-            if l.status == 'Activa' and l.expiration_date and l.expiration_date >= datetime.utcnow().date():
-                days_left = (l.expiration_date - datetime.utcnow().date()).days
-                active_licenses.append({
-                    'type': l.type,
-                    'days_left': days_left
-                })
+        # Procesar Pago
+        account.balance -= total_cost
+        
+        # Guardar Foto
+        photo_filename = None
+        if form.photo.data:
+            f = form.photo.data
+            photo_filename = secure_filename(f.filename)
+            f.save(os.path.join(current_app.config['UPLOAD_FOLDER'], photo_filename))
 
-    return render_template('licenses.html', active_licenses=active_licenses, prices=license_prices)
+        # Crear Negocio
+        new_business = Business(
+            name=form.name.data,
+            type=b_type,
+            location_x=form.location_x.data,
+            location_y=form.location_y.data,
+            photo_filename=photo_filename,
+            owner_id=current_user.id
+        )
+        db.session.add(new_business)
+        db.session.commit() # Commit para obtener el ID del negocio
+
+        # Crear Licencias vinculadas al negocio
+        expiration = datetime.utcnow().date() + timedelta(days=30)
+        
+        # 1. Licencia de Funcionamiento (Obligatoria)
+        lic1 = License(
+            type='Licencia de Funcionamiento',
+            status='Activa',
+            expiration_date=expiration,
+            user_id=current_user.id,
+            business_id=new_business.id
+        )
+        db.session.add(lic1)
+
+        # 2. Licencia Extra (si aplica)
+        if extra_license_name:
+            lic2 = License(
+                type=extra_license_name,
+                status='Activa',
+                expiration_date=expiration,
+                user_id=current_user.id,
+                business_id=new_business.id
+            )
+            db.session.add(lic2)
+
+        # Transacción
+        trans = BankTransaction(
+            account_id=account.id,
+            type='purchase',
+            amount=total_cost,
+            description=f'Licencia Negocio: {form.name.data}'
+        )
+        db.session.add(trans)
+        
+        # Fondo Gobierno (opcional, si se quiere sumar)
+        fund = get_gov_fund()
+        # fund.balance += total_cost 
+
+        db.session.commit()
+        flash(f'Negocio "{form.name.data}" registrado exitosamente. Costo: ${total_cost}')
+        return redirect(url_for('main.licenses'))
+    
+    else:
+        flash('Error en el formulario. Revisa los datos.')
+        return redirect(url_for('main.licenses'))
+
 
 @bp.route('/lottery/buy', methods=['POST'])
 @login_required
