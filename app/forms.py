@@ -78,6 +78,7 @@ class TransferForm(FlaskForm):
     submit = SubmitField('Transferir')
 
 class LoanForm(FlaskForm):
+    accept_terms = BooleanField('Acepto los términos', validators=[DataRequired()])
     submit = SubmitField('Solicitar Préstamo Rápido ($5500)')
 
 class LoanRepayForm(FlaskForm):
