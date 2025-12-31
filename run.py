@@ -49,9 +49,17 @@ with app.app_context():
                         conn.execute(text("ALTER TABLE government_fund ADD COLUMN net_benefits FLOAT DEFAULT 0.0"))
                         conn.commit()
             
-            # --- REPARACIÓN LICENCIAS (Nuevo Business ID) ---
+            # --- REPARACIÓN LICENCIAS (Nuevo Business ID y Issue Date) ---
             if 'license' in inspector.get_table_names():
                 existing_columns = [col['name'] for col in inspector.get_columns('license')]
+                
+                # REPARACIÓN: Agregar issue_date si falta (Causa del error)
+                if 'issue_date' not in existing_columns:
+                    print("🔧 Reparando DB: Agregando columna 'issue_date' a License...")
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE license ADD COLUMN issue_date DATE DEFAULT CURRENT_DATE"))
+                        conn.commit()
+
                 if 'business_id' not in existing_columns:
                     print("🔧 Reparando DB: Agregando columna 'business_id' a License...")
                     with db.engine.connect() as conn:
