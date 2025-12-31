@@ -30,10 +30,19 @@ class User(UserMixin, db.Model):
     # Relationships
     bank_account = db.relationship('BankAccount', backref='owner', uselist=False, cascade="all, delete-orphan")
     licenses = db.relationship('License', backref='holder', lazy='dynamic')
+    
+    # Antecedentes donde el usuario es el SUJETO (quien cometió el delito)
     criminal_records = db.relationship('CriminalRecord', foreign_keys='CriminalRecord.user_id', backref='subject', lazy='dynamic')
+    
+    # Antecedentes creados POR este usuario (Oficial)
+    # backref='author' creates 'record.author' on CriminalRecord automatically.
     authored_reports = db.relationship('CriminalRecord', foreign_keys='CriminalRecord.author_id', backref='author', lazy='dynamic')
+    
     traffic_fines = db.relationship('TrafficFine', foreign_keys='TrafficFine.user_id', backref='offender', lazy='dynamic')
+    
+    # Comentarios sobre este usuario
     comments = db.relationship('Comment', foreign_keys='Comment.user_id', backref='subject_user', lazy='dynamic')
+    
     businesses = db.relationship('Business', backref='owner', lazy='dynamic') # Relación con negocios
 
     def set_password(self, password):
@@ -136,8 +145,8 @@ class CriminalRecord(db.Model):
     subject_photos = db.relationship('CriminalRecordSubjectPhoto', backref='record', lazy=True, cascade="all, delete-orphan")
     evidence_photos = db.relationship('CriminalRecordEvidencePhoto', backref='record', lazy=True, cascade="all, delete-orphan")
     
-    # Relationship for author
-    author = db.relationship('User', foreign_keys=[author_id])
+    # REMOVED EXPLICIT 'author' RELATIONSHIP HERE TO FIX CONFLICT WITH USER BACKREF
+    # The backref 'author' in User.authored_reports creates this automatically.
 
 class CriminalRecordSubjectPhoto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
