@@ -9,7 +9,7 @@ from sqlalchemy.exc import ProgrammingError
 from app.models import (
     User, BankAccount, GovernmentFund, Lottery, 
     TrafficFine, Comment, License, CriminalRecord, 
-    LotteryTicket, PayrollRequest, PayrollItem, Appointment
+    LotteryTicket, PayrollRequest, PayrollItem, Appointment, Business
 )
 
 load_dotenv()
@@ -34,26 +34,34 @@ with app.app_context():
         # 1. REPARACIÓN MANUAL DE SCHEMA (Si las migraciones fallan)
         try:
             inspector = inspect(db.engine)
+            
+            # --- REPARACIÓN FONDO GOBIERNO ---
             if 'government_fund' in inspector.get_table_names():
                 existing_columns = [col['name'] for col in inspector.get_columns('government_fund')]
-                
-                # Chequeo y reparación de 'expenses_description'
                 if 'expenses_description' not in existing_columns:
-                    print("🔧 Reparando DB: Agregando columna faltante 'expenses_description'...")
+                    print("🔧 Reparando DB: Agregando columna 'expenses_description'...")
                     with db.engine.connect() as conn:
                         conn.execute(text("ALTER TABLE government_fund ADD COLUMN expenses_description TEXT"))
                         conn.commit()
-                
-                # Chequeo y reparación de 'net_benefits'
                 if 'net_benefits' not in existing_columns:
-                    print("🔧 Reparando DB: Agregando columna faltante 'net_benefits'...")
+                    print("🔧 Reparando DB: Agregando columna 'net_benefits'...")
                     with db.engine.connect() as conn:
                         conn.execute(text("ALTER TABLE government_fund ADD COLUMN net_benefits FLOAT DEFAULT 0.0"))
                         conn.commit()
+            
+            # --- REPARACIÓN LICENCIAS (Nuevo Business ID) ---
+            if 'license' in inspector.get_table_names():
+                existing_columns = [col['name'] for col in inspector.get_columns('license')]
+                if 'business_id' not in existing_columns:
+                    print("🔧 Reparando DB: Agregando columna 'business_id' a License...")
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE license ADD COLUMN business_id INTEGER REFERENCES business(id)"))
+                        conn.commit()
+
         except Exception as e:
             print(f"⚠️ Error en inspección manual: {e}")
 
-        # 2. Crear Tablas (Si no existen)
+        # 2. Crear Tablas (Si no existen, incluyendo Business)
         try:
             # db.create_all() intenta crear tablas. Si ya existen y falla, capturamos el error.
             db.create_all()
