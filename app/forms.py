@@ -156,3 +156,25 @@ class EditCitizenPhotoForm(FlaskForm):
     selfie = FileField('Nueva Selfie', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
     dni_photo = FileField('Nueva Foto DNI', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
     submit = SubmitField('Actualizar Fotos')
+
+class BusinessLicenseForm(FlaskForm):
+    name = StringField('Nombre del Negocio', validators=[DataRequired()])
+    business_type = SelectField('Tipo de Negocio', choices=[
+        ('247', 'Tienda 24/7'),
+        ('Pharmacy', 'Farmacia'),
+        ('Mechanic', 'Taller Mecánico'),
+        ('Restaurant', 'Restaurante'),
+        ('GasStation', 'Gasolinera'),
+        ('Club', 'Discoteca'),
+        ('Bar', 'Bar'),
+        ('UsedCars', 'Venta Coches Usados'),
+        ('SexShop', 'Sex Shop'),
+        ('Groceries', 'Verdulería'),
+        ('Hardware', 'Ferretería'),
+        ('Barber', 'Barbería'),
+        ('Clothes', 'Tienda de Ropa')
+    ], validators=[DataRequired()])
+    location_x = FloatField('Pos X', validators=[DataRequired()])
+    location_y = FloatField('Pos Y', validators=[DataRequired()])
+    photo = FileField('Foto del Local (Exterior)', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
+    submit = SubmitField('Registrar y Pagar')
