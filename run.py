@@ -66,6 +66,23 @@ with app.app_context():
                         conn.execute(text("ALTER TABLE license ADD COLUMN business_id INTEGER REFERENCES business(id)"))
                         conn.commit()
 
+            # --- REPARACIÓN COMMENTS (Timestamp missing) ---
+            if 'comment' in inspector.get_table_names():
+                existing_columns = [col['name'] for col in inspector.get_columns('comment')]
+                
+                # Si falta timestamp pero existe created_at (migración antigua), renombramos o creamos
+                if 'timestamp' not in existing_columns:
+                    if 'created_at' in existing_columns:
+                        print("🔧 Reparando DB: Renombrando 'created_at' a 'timestamp' en Comment...")
+                        with db.engine.connect() as conn:
+                            conn.execute(text("ALTER TABLE comment RENAME COLUMN created_at TO timestamp"))
+                            conn.commit()
+                    else:
+                        print("🔧 Reparando DB: Agregando columna 'timestamp' a Comment...")
+                        with db.engine.connect() as conn:
+                            conn.execute(text("ALTER TABLE comment ADD COLUMN timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
+                            conn.commit()
+
         except Exception as e:
             print(f"⚠️ Error en inspección manual: {e}")
 
