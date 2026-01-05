@@ -1063,7 +1063,8 @@ def official_action(user_id, action):
 
     target_user = User.query.get_or_404(user_id)
 
-    if target_user.department != current_user.department:
+    # MODIFICADO: Permitir si es del mismo departamento O si el usuario actual es de 'Gobierno'
+    if target_user.department != current_user.department and current_user.department != 'Gobierno':
         flash('No tienes permiso para gestionar este usuario.')
         return redirect(url_for('main.official_dashboard'))
 
