@@ -1312,6 +1312,35 @@ def official_salaries():
 
     return render_template('manage_salaries.html', members=members, salary_form=salary_form)
 
+@bp.route('/official/kick_member/<int:user_id>', methods=['POST'])
+@login_required
+def kick_member(user_id):
+    if not current_user.badge_id or current_user.official_rank != 'Lider':
+        flash('No tienes permiso para realizar esta acción.', 'danger')
+        return redirect(url_for('main.official_dashboard'))
+
+    target_user = User.query.get_or_404(user_id)
+
+    # Validar permisos: Mismo departamento O Gobierno
+    if target_user.department != current_user.department and current_user.department != 'Gobierno':
+        flash('No puedes expulsar a miembros de otro departamento.', 'danger')
+        return redirect(url_for('main.official_salaries'))
+    
+    # Evitar auto-expulsión accidental (opcional, pero recomendado)
+    if target_user.id == current_user.id:
+        flash('No puedes expulsarte a ti mismo.', 'warning')
+        return redirect(url_for('main.official_salaries'))
+
+    # Lógica de expulsión
+    target_user.official_status = 'Suspendido'
+    target_user.badge_id = None # Revocar acceso oficial
+    # Opcional: target_user.department = None (Si quieres que dejen de pertenecer al dpto totalmente)
+    
+    db.session.commit()
+    
+    flash(f'Funcionario {target_user.first_name} {target_user.last_name} ha sido expulsado del departamento.', 'success')
+    return redirect(url_for('main.official_salaries'))
+
 @bp.route('/official/salaries/update/<int:user_id>', methods=['POST'])
 @login_required
 def update_salary(user_id):
