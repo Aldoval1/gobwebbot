@@ -3,117 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestionar Sueldos - {{ current_user.department }}</title>
+    <title>Gestión de Salarios y Personal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #ecf0f1;
-            margin: 0;
-            padding: 20px;
+        .member-img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid #dee2e6;
         }
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #2c3e50;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            background-color: #34495e;
-            color: white;
-        }
-        tr.warning {
-            background-color: #ffe6e6;
-            color: #c0392b;
-        }
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
-            background-color: #3498db;
-        }
-        .btn-submit {
-            background-color: #27ae60;
-            font-size: 18px;
-            padding: 15px 30px;
-            margin-top: 30px;
-            display: block;
-            width: 100%;
-        }
-        input[type="number"] {
-            padding: 5px;
-            width: 100px;
+        .salary-badge {
+            font-size: 1.1em;
+            font-weight: bold;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <a href="{{ url_for('main.official_dashboard') }}" style="text-decoration: none; color: #7f8c8d;">← Volver</a>
-        <h1>Gestión de Sueldos - {{ current_user.department }}</h1>
-        <p>Asigna los sueldos a tus empleados. Los usuarios marcados en rojo no tienen cuenta bancaria y no podrán recibir pagos.</p>
+<body class="bg-light">
+    <div class="container mt-5">
+        <a href="{{ url_for('main.official_dashboard') }}" class="btn btn-outline-secondary mb-4">← Volver al Panel</a>
+        
+        <h2 class="mb-4">Gestión de Personal: {{ current_user.department }}</h2>
 
-        {% with messages = get_flashed_messages() %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for message in messages %}
-                    <div style="background: #dff0d8; padding: 10px; color: #3c763d;">{{ message }}</div>
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category if category != 'message' else 'info' }}">{{ message }}</div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Rango</th>
-                    <th>Cuenta Bancaria</th>
-                    <th>Sueldo Actual</th>
-                    <th>Nuevo Sueldo</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for member in members %}
-                <tr class="{% if not member.bank_account %}warning{% endif %}">
-                    <td>{{ member.first_name }} {{ member.last_name }}</td>
-                    <td>{{ member.official_rank }}</td>
-                    <td>
-                        {% if member.bank_account %}
-                            {{ member.bank_account.account_number }}
-                        {% else %}
-                            <strong>NO TIENE</strong>
-                        {% endif %}
-                    </td>
-                    <td>${{ "{:,.2f}".format(member.salary if member.salary else 0) }}</td>
-                    <td>
-                        <form action="{{ url_for('main.update_salary', user_id=member.id) }}" method="POST" style="display:flex; gap:5px;">
-                            {{ salary_form.hidden_tag() }}
-                            {{ salary_form.salary(value=member.salary) }}
-                            <button type="submit" class="btn">Guardar</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="card shadow-sm">
+            <div class="card-body">
+                {% if members %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Funcionario</th>
+                                <th>Rango</th>
+                                <th>Sueldo Actual</th>
+                                <th>Asignar Nuevo Sueldo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename='img/' + (member.selfie_filename or 'default.jpg')) }}" class="member-img" alt="Foto">
+                                        <div>
+                                            <div class="fw-bold">{{ member.first_name }} {{ member.last_name }}</div>
+                                            <small class="text-muted">Placa: {{ member.badge_id }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-secondary">{{ member.official_rank }}</span></td>
+                                <td>
+                                    <span class="badge bg-success salary-badge">${{ "{:,.2f}".format(member.salary) }}</span>
+                                </td>
+                                <td>
+                                    <form action="{{ url_for('main.update_salary', user_id=member.id) }}" method="POST" class="d-flex gap-2">
+                                        {{ salary_form.hidden_tag() }}
+                                        <div class="input-group input-group-sm" style="max-width: 150px;">
+                                            <span class="input-group-text">$</span>
+                                            {{ salary_form.salary(class="form-control", placeholder="0", value=member.salary) }}
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    {% if member.id != current_user.id %}
+                                    <form action="{{ url_for('main.kick_member', user_id=member.id) }}" method="POST" onsubmit="return confirm('¿Estás SEGURO de expulsar a {{ member.first_name }}? Esta acción revocará su acceso y placa.');">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">Expulsar</button>
+                                    </form>
+                                    {% else %}
+                                    <span class="text-muted small">Tú</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                    <p class="text-center text-muted py-4">No hay miembros activos en tu departamento.</p>
+                {% endif %}
+            </div>
+        </div>
 
-        <form action="{{ url_for('main.submit_payroll') }}" method="POST">
-            <button type="submit" class="btn btn-submit">Enviar Nómina para Aprobación</button>
-        </form>
+        <div class="mt-4 text-end">
+            <form action="{{ url_for('main.submit_payroll') }}" method="POST">
+                <button type="submit" class="btn btn-success btn-lg">Enviar Nómina para Aprobación</button>
+            </form>
+            <small class="text-muted d-block mt-2">Esto enviará una solicitud al Gobierno con la suma total de los sueldos actuales.</small>
+        </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
