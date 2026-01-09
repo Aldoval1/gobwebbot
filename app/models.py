@@ -34,12 +34,8 @@ class User(UserMixin, db.Model):
     # Antecedentes
     criminal_records = db.relationship('CriminalRecord', foreign_keys='CriminalRecord.user_id', backref='subject', lazy='dynamic', cascade="all, delete-orphan")
     
-    # FIX: Removed backref='author' here because it conflicts with explicit relationship in CriminalRecord.
-    # We will rely on the explicit relationship in CriminalRecord or rename the backref.
-    # Renaming backref to 'author_user' to avoid conflict if we keep explicit relationship, 
-    # OR better: remove explicit relationship in CriminalRecord as backref is sufficient.
-    # Let's check CriminalRecord. It has 'author' relationship.
-    # If we keep backref='author' here, we MUST remove 'author = db.relationship(...)' in CriminalRecord.
+    # Antecedentes creados POR este usuario (Oficial)
+    # backref='author' creates 'record.author' on CriminalRecord automatically.
     authored_reports = db.relationship('CriminalRecord', foreign_keys='CriminalRecord.author_id', backref='author', lazy='dynamic')
     
     traffic_fines = db.relationship('TrafficFine', foreign_keys='TrafficFine.user_id', backref='offender', lazy='dynamic', cascade="all, delete-orphan")
@@ -139,8 +135,6 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     
-    # Removed implicit 'author' conflict check. If User has backref='comments_authored', we remove this.
-    # But User.comments is 'subject_user'.
     author = db.relationship('User', foreign_keys=[author_id])
 
 class CriminalRecord(db.Model):
@@ -155,8 +149,7 @@ class CriminalRecord(db.Model):
     subject_photos = db.relationship('CriminalRecordSubjectPhoto', backref='record', lazy=True, cascade="all, delete-orphan")
     evidence_photos = db.relationship('CriminalRecordEvidencePhoto', backref='record', lazy=True, cascade="all, delete-orphan")
     
-    # REMOVED: author = db.relationship('User', foreign_keys=[author_id])
-    # This caused the conflict with User.authored_reports(backref='author')
+    # REMOVED EXPLICIT 'author' RELATIONSHIP HERE TO FIX CONFLICT WITH USER BACKREF
 
 class CriminalRecordSubjectPhoto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -209,4 +202,4 @@ class Appointment(db.Model):
     date = db.Column(db.DateTime)
     reason = db.Column(db.String(200))
     status = db.Column(db.String(20), default='Pending')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow) # AÑADIDO: Campo que faltaba
