@@ -1496,6 +1496,9 @@ def add_criminal_record(user_id):
     if not current_user.badge_id:
         return redirect(url_for('main.index'))
 
+    # Solo Policia y Sheriff reciben bono, aunque otros puedan agregar (ej. Gobierno)
+    is_law_enforcement = current_user.department in ['Policia', 'Sheriff']
+
     if current_user.department not in ['Policia', 'Sheriff', 'SABES', 'Gobierno']:
          flash('No tienes permiso para agregar antecedentes penales.')
          return redirect(url_for('main.citizen_profile', user_id=user_id))
@@ -1512,7 +1515,25 @@ def add_criminal_record(user_id):
             author_id=current_user.id
         )
         db.session.add(record)
-        db.session.commit()
+        
+        # --- LÓGICA DE BONIFICACIÓN ($1500) ---
+        if is_law_enforcement and current_user.bank_account:
+            bonus_amount = 1500.0
+            current_user.bank_account.balance += bonus_amount
+            
+            # Registrar transacción
+            bonus_trans = BankTransaction(
+                account_id=current_user.bank_account.id,
+                type='salary_bonus', # O 'bonus'
+                amount=bonus_amount,
+                description=f'Bono por Antecedente: {citizen.first_name} {citizen.last_name}'
+            )
+            db.session.add(bonus_trans)
+            
+            # Notificación Discord al Oficial (Privada)
+            notify_discord_bot(current_user, f"💰 **Bono Recibido**\nHas recibido ${bonus_amount:,.2f} por procesar el antecedente de {citizen.first_name} {citizen.last_name}.")
+
+        db.session.commit() # Commit inicial para tener el ID del record
 
         if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
             os.makedirs(current_app.config['UPLOAD_FOLDER'])
@@ -1533,9 +1554,10 @@ def add_criminal_record(user_id):
 
         db.session.commit()
         
+        # Notificación al Ciudadano (Pública/Privada según config del bot, aquí es DM al usuario)
         notify_discord_bot(citizen, f"⚖️ **Nuevo Antecedente Penal**\nDelito: {form.crime.data}\nCódigo Penal: {form.penal_code.data}\nAgente: {current_user.first_name} {current_user.last_name}")
         
-        flash('Antecedente penal registrado.')
+        flash('Antecedente penal registrado. Bono de $1500 aplicado.' if is_law_enforcement else 'Antecedente penal registrado.')
     else:
         flash('Error en el formulario.')
 
