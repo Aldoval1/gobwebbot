@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 from flask_migrate import upgrade
 from sqlalchemy import text, inspect
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import ProgrammingError, InvalidRequestError
 
 # Importar modelos para que SQLAlchemy sepa qué tablas crear
 from app.models import (
