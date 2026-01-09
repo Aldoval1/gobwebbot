@@ -231,6 +231,11 @@
                                 🗑️ BORRAR ANTECEDENTES
                             </button>
                         </form>
+
+                        <!-- CAMBIO: Botón para cambiar contraseña en lugar de Reset -->
+                        <button class="btn btn-warning w-100 fw-bold" onclick="openModal('changePasswordModal')">
+                            🔑 CAMBIAR CONTRASEÑA
+                        </button>
                     </div>
                 </div>
                 {% endif %}
@@ -357,6 +362,8 @@
                         <div class="mb-3">{{ criminal_form.crime.label }} {{ criminal_form.crime(class="form-control") }}</div>
                         <div class="mb-3">{{ criminal_form.penal_code.label }} {{ criminal_form.penal_code(class="form-control") }}</div>
                         <div class="mb-3">{{ criminal_form.report_text.label }} {{ criminal_form.report_text(class="form-control", rows=3) }}</div>
+                        <div class="mb-3">{{ criminal_form.subject_photos.label }} {{ criminal_form.subject_photos(class="form-control") }}</div>
+                        <div class="mb-3">{{ criminal_form.evidence_photos.label }} {{ criminal_form.evidence_photos(class="form-control") }}</div>
                         <button type="submit" class="btn btn-danger w-100">Guardar</button>
                     </form>
                 </div>
@@ -408,6 +415,26 @@
                <button class="btn btn-primary w-100">Subir</button>
            </form>
        </div></div></div>
+    </div>
+
+    <!-- NUEVO: Modal Cambiar Contraseña -->
+    <div id="changePasswordModal" class="modal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+       <div class="modal-dialog"><div class="modal-content">
+           <div class="modal-header">
+               <h5 class="modal-title">Cambiar Contraseña</h5>
+               <button type="button" class="btn-close" onclick="closeModal('changePasswordModal')"></button>
+           </div>
+           <div class="modal-body">
+               <form action="{{ url_for('main.change_citizen_password', user_id=citizen.id) }}" method="POST">
+                   {{ change_password_form.hidden_tag() }}
+                   <div class="mb-3">
+                       <label class="form-label">Nueva Contraseña</label>
+                       {{ change_password_form.new_password(class="form-control") }}
+                   </div>
+                   <button class="btn btn-warning w-100">Establecer</button>
+               </form>
+           </div>
+       </div></div>
     </div>
     {% endif %}
 
