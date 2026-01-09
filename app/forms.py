@@ -178,3 +178,12 @@ class BusinessLicenseForm(FlaskForm):
     location_y = FloatField('Pos Y', validators=[DataRequired()])
     photo = FileField('Foto del Local (Exterior)', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
     submit = SubmitField('Registrar y Pagar')
+
+class UserPhotoForm(FlaskForm):
+    photo = FileField('Nueva Foto de Perfil', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
+    submit = SubmitField('Actualizar Foto')
+
+# NUEVO: Formulario de Cambio de Contraseña (Admin)
+class ChangePasswordForm(FlaskForm):
+    new_password = PasswordField('Nueva Contraseña', validators=[DataRequired(), Length(min=3)])
+    submit = SubmitField('Establecer Contraseña')
