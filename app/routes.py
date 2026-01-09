@@ -10,7 +10,7 @@ from app.forms import (
     SearchUserForm, CriminalRecordForm, TrafficFineForm, CommentForm,
     TransferForm, LoanForm, LoanRepayForm, SavingsForm, CardCustomizationForm,
     LotteryTicketForm, AdjustBalanceForm, GovFundAdjustForm, SalaryForm, AppointmentForm,
-    CreateLeaderForm, GovFinancialsForm, EditCitizenForm, EditCitizenPhotoForm, BusinessLicenseForm
+    CreateLeaderForm, GovFinancialsForm, EditCitizenForm, EditCitizenPhotoForm, BusinessLicenseForm, UserPhotoForm, ChangePasswordForm
 )
 from app.models import (
     User, Comment, TrafficFine, License, CriminalRecord,
@@ -418,8 +418,30 @@ def my_documents():
         account_age = (datetime.utcnow() - current_user.created_at).days
     else:
         account_age = 0
+    
+    # Formulario para actualizar foto
+    photo_form = UserPhotoForm()
 
-    return render_template('my_documents.html', account_age=account_age)
+    return render_template('my_documents.html', account_age=account_age, photo_form=photo_form)
+
+@bp.route('/my_documents/update_photo', methods=['POST'])
+@login_required
+def update_my_photo():
+    form = UserPhotoForm()
+    if form.validate_on_submit():
+        if form.photo.data:
+            f = form.photo.data
+            filename = secure_filename(f.filename)
+            f.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
+            current_user.selfie_filename = filename
+            db.session.commit()
+            flash('Foto de perfil actualizada.')
+        else:
+            flash('No se seleccionó ninguna foto.')
+    else:
+        flash('Error al subir la foto. Asegúrate de que sea una imagen válida.')
+    
+    return redirect(url_for('main.my_documents'))
 
 @bp.route('/my_documents/download_criminal_record')
 @login_required
@@ -534,7 +556,7 @@ def banking_dashboard():
     ).order_by(BankTransaction.timestamp.desc()).all()
 
     for t in transactions:
-        t.is_positive = t.type in ['transfer_in', 'loan_received', 'savings_withdrawal', 'interest', 'lottery_win', 'salary', 'government_adjustment_add']
+        t.is_positive = t.type in ['transfer_in', 'loan_received', 'savings_withdrawal', 'interest', 'lottery_win', 'salary', 'government_adjustment_add', 'salary_bonus']
 
     return render_template('banking.html', account=account,
                            transfer_form=transfer_form, loan_form=loan_form,
@@ -1435,13 +1457,16 @@ def citizen_profile(user_id):
     # Nuevos formularios
     edit_info_form = EditCitizenForm(obj=citizen)
     edit_photos_form = EditCitizenPhotoForm()
+    # NUEVO: Formulario cambio de contraseña para admin
+    change_password_form = ChangePasswordForm()
 
     return render_template('citizen_profile.html', citizen=citizen,
                            can_edit=can_edit_reports,
                            can_adjust_balance=can_adjust_balance,
                            comment_form=comment_form, fine_form=fine_form,
                            criminal_form=criminal_form, adjust_balance_form=adjust_balance_form,
-                           edit_info_form=edit_info_form, edit_photos_form=edit_photos_form)
+                           edit_info_form=edit_info_form, edit_photos_form=edit_photos_form,
+                           change_password_form=change_password_form)
 
 @bp.route('/official/citizen/<int:user_id>/add_comment', methods=['POST'])
 @login_required
@@ -1678,4 +1703,24 @@ def clear_criminal_records(user_id):
     count = CriminalRecord.query.filter_by(user_id=user.id).delete()
     db.session.commit()
     flash(f'Se han borrado {count} antecedentes penales de este ciudadano.')
+    return redirect(url_for('main.citizen_profile', user_id=user_id))
+
+# RUTA PARA CAMBIAR CONTRASEÑA (Reemplaza a reset_account)
+@bp.route('/official/citizen/<int:user_id>/change_password', methods=['POST'])
+@login_required
+def change_citizen_password(user_id):
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.citizen_profile', user_id=user_id))
+        
+    user = User.query.get_or_404(user_id)
+    form = ChangePasswordForm()
+    
+    if form.validate_on_submit():
+        user.set_password(form.new_password.data)
+        db.session.commit()
+        flash(f'Contraseña de {user.first_name} cambiada exitosamente.')
+    else:
+        flash('Error al cambiar contraseña.')
+        
     return redirect(url_for('main.citizen_profile', user_id=user_id))
