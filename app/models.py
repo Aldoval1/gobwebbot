@@ -1,6 +1,6 @@
 from app import db
-from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
 from datetime import datetime
 
 class User(UserMixin, db.Model):
@@ -27,23 +27,28 @@ class User(UserMixin, db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
+    # Relationships (Con CASCADE para permitir eliminación limpia de usuarios)
     bank_account = db.relationship('BankAccount', backref='owner', uselist=False, cascade="all, delete-orphan")
-    licenses = db.relationship('License', backref='holder', lazy='dynamic')
+    licenses = db.relationship('License', backref='holder', lazy='dynamic', cascade="all, delete-orphan")
     
-    # Antecedentes donde el usuario es el SUJETO (quien cometió el delito)
-    criminal_records = db.relationship('CriminalRecord', foreign_keys='CriminalRecord.user_id', backref='subject', lazy='dynamic')
-    
-    # Antecedentes creados POR este usuario (Oficial)
-    # backref='author' creates 'record.author' on CriminalRecord automatically.
+    # Antecedentes
+    criminal_records = db.relationship('CriminalRecord', foreign_keys='CriminalRecord.user_id', backref='subject', lazy='dynamic', cascade="all, delete-orphan")
     authored_reports = db.relationship('CriminalRecord', foreign_keys='CriminalRecord.author_id', backref='author', lazy='dynamic')
     
-    traffic_fines = db.relationship('TrafficFine', foreign_keys='TrafficFine.user_id', backref='offender', lazy='dynamic')
+    traffic_fines = db.relationship('TrafficFine', foreign_keys='TrafficFine.user_id', backref='offender', lazy='dynamic', cascade="all, delete-orphan")
     
-    # Comentarios sobre este usuario
-    comments = db.relationship('Comment', foreign_keys='Comment.user_id', backref='subject_user', lazy='dynamic')
+    # Comentarios
+    comments = db.relationship('Comment', foreign_keys='Comment.user_id', backref='subject_user', lazy='dynamic', cascade="all, delete-orphan")
     
-    businesses = db.relationship('Business', backref='owner', lazy='dynamic') # Relación con negocios
+    # Negocios
+    businesses = db.relationship('Business', backref='owner', lazy='dynamic', cascade="all, delete-orphan")
+
+    # Lotería
+    tickets = db.relationship('LotteryTicket', backref='owner', lazy='dynamic', cascade="all, delete-orphan")
+
+    # Citas (Appointments) - Importante para el error de borrado
+    appointments_made = db.relationship('Appointment', foreign_keys='Appointment.citizen_id', backref='citizen', lazy=True, cascade="all, delete-orphan")
+    appointments_received = db.relationship('Appointment', foreign_keys='Appointment.official_id', backref='official', lazy=True, cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -69,9 +74,9 @@ class BankAccount(db.Model):
 class BankTransaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account_id = db.Column(db.Integer, db.ForeignKey('bank_account.id'))
-    type = db.Column(db.String(20)) # transfer_in, transfer_out, deposit, withdraw, fine, salary, etc.
+    type = db.Column(db.String(20))
     amount = db.Column(db.Float)
-    related_account = db.Column(db.String(20), nullable=True) # From/To account
+    related_account = db.Column(db.String(20), nullable=True)
     description = db.Column(db.String(200))
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -80,7 +85,7 @@ class BankLoan(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey('bank_account.id'))
     amount_due = db.Column(db.Float)
     due_date = db.Column(db.DateTime)
-    status = db.Column(db.String(20), default='Active') # Active, Paid, Defaulted
+    status = db.Column(db.String(20), default='Active')
     last_penalty_check = db.Column(db.DateTime, nullable=True)
 
 class BankSavings(db.Model):
@@ -88,19 +93,18 @@ class BankSavings(db.Model):
     account_id = db.Column(db.Integer, db.ForeignKey('bank_account.id'))
     amount = db.Column(db.Float)
     deposit_date = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20), default='Active') # Active, Withdrawn
+    status = db.Column(db.String(20), default='Active')
 
 class Business(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    type = db.Column(db.String(50), nullable=False) # Tipo de negocio
-    location_x = db.Column(db.Float) # Coordenada X (%) en el mapa
-    location_y = db.Column(db.Float) # Coordenada Y (%) en el mapa
+    type = db.Column(db.String(50), nullable=False)
+    location_x = db.Column(db.Float)
+    location_y = db.Column(db.Float)
     photo_filename = db.Column(db.String(120), nullable=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Las licencias asociadas a este negocio
     licenses = db.relationship('License', backref='business', lazy='dynamic', cascade="all, delete-orphan")
 
 class License(db.Model):
@@ -110,8 +114,6 @@ class License(db.Model):
     issue_date = db.Column(db.Date, default=datetime.utcnow().date)
     expiration_date = db.Column(db.Date, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    
-    # Nuevo: Vinculación con un negocio (opcional, para licencias comerciales)
     business_id = db.Column(db.Integer, db.ForeignKey('business.id'), nullable=True)
 
 class TrafficFine(db.Model):
@@ -119,7 +121,7 @@ class TrafficFine(db.Model):
     amount = db.Column(db.Float)
     reason = db.Column(db.String(200))
     date = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20), default='Pendiente') # Pendiente, Pagada
+    status = db.Column(db.String(20), default='Pendiente')
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
@@ -130,7 +132,6 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     
-    # Relationship to access author details easily
     author = db.relationship('User', foreign_keys=[author_id])
 
 class CriminalRecord(db.Model):
@@ -145,8 +146,7 @@ class CriminalRecord(db.Model):
     subject_photos = db.relationship('CriminalRecordSubjectPhoto', backref='record', lazy=True, cascade="all, delete-orphan")
     evidence_photos = db.relationship('CriminalRecordEvidencePhoto', backref='record', lazy=True, cascade="all, delete-orphan")
     
-    # REMOVED EXPLICIT 'author' RELATIONSHIP HERE TO FIX CONFLICT WITH USER BACKREF
-    # The backref 'author' in User.authored_reports creates this automatically.
+    author = db.relationship('User', foreign_keys=[author_id])
 
 class CriminalRecordSubjectPhoto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -168,20 +168,18 @@ class LotteryTicket(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     numbers = db.Column(db.String(5))
     date = db.Column(db.Date)
-    
-    owner = db.relationship('User', backref='tickets')
 
 class GovernmentFund(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     balance = db.Column(db.Float, default=1000000.0)
-    expenses_description = db.Column(db.Text, nullable=True) # Descripción de gastos
-    net_benefits = db.Column(db.Float, default=0.0) # Beneficios netos
+    expenses_description = db.Column(db.Text, nullable=True)
+    net_benefits = db.Column(db.Float, default=0.0)
 
 class PayrollRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     department = db.Column(db.String(64))
     total_amount = db.Column(db.Float)
-    status = db.Column(db.String(20), default='Pending') # Pending, Approved, Rejected
+    status = db.Column(db.String(20), default='Pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     items = db.relationship('PayrollItem', backref='request', lazy=True, cascade="all, delete-orphan")
@@ -200,8 +198,5 @@ class Appointment(db.Model):
     official_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     date = db.Column(db.DateTime)
     reason = db.Column(db.String(200))
-    status = db.Column(db.String(20), default='Pending') # Pending, Completed, Cancelled
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    citizen = db.relationship('User', foreign_keys=[citizen_id], backref='appointments_made')
-    official = db.relationship('User', foreign_keys=[official_id], backref='appointments_received')
+    status = db.Column(db.String(20), default='Pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow) # AÑADIDO: Campo que faltaba
