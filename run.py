@@ -49,28 +49,23 @@ with app.app_context():
                         conn.execute(text("ALTER TABLE government_fund ADD COLUMN net_benefits FLOAT DEFAULT 0.0"))
                         conn.commit()
             
-            # --- REPARACIÓN LICENCIAS (Nuevo Business ID y Issue Date) ---
+            # --- REPARACIÓN LICENCIAS ---
             if 'license' in inspector.get_table_names():
                 existing_columns = [col['name'] for col in inspector.get_columns('license')]
-                
-                # REPARACIÓN: Agregar issue_date si falta (Causa del error)
                 if 'issue_date' not in existing_columns:
                     print("🔧 Reparando DB: Agregando columna 'issue_date' a License...")
                     with db.engine.connect() as conn:
                         conn.execute(text("ALTER TABLE license ADD COLUMN issue_date DATE DEFAULT CURRENT_DATE"))
                         conn.commit()
-
                 if 'business_id' not in existing_columns:
                     print("🔧 Reparando DB: Agregando columna 'business_id' a License...")
                     with db.engine.connect() as conn:
                         conn.execute(text("ALTER TABLE license ADD COLUMN business_id INTEGER REFERENCES business(id)"))
                         conn.commit()
 
-            # --- REPARACIÓN COMMENTS (Timestamp missing) ---
+            # --- REPARACIÓN COMMENTS ---
             if 'comment' in inspector.get_table_names():
                 existing_columns = [col['name'] for col in inspector.get_columns('comment')]
-                
-                # Si falta timestamp pero existe created_at (migración antigua), renombramos o creamos
                 if 'timestamp' not in existing_columns:
                     if 'created_at' in existing_columns:
                         print("🔧 Reparando DB: Renombrando 'created_at' a 'timestamp' en Comment...")
@@ -82,6 +77,15 @@ with app.app_context():
                         with db.engine.connect() as conn:
                             conn.execute(text("ALTER TABLE comment ADD COLUMN timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
                             conn.commit()
+
+            # --- REPARACIÓN APPOINTMENT (Falta created_at) ---
+            if 'appointment' in inspector.get_table_names():
+                existing_columns = [col['name'] for col in inspector.get_columns('appointment')]
+                if 'created_at' not in existing_columns:
+                    print("🔧 Reparando DB: Agregando columna 'created_at' a Appointment...")
+                    with db.engine.connect() as conn:
+                        conn.execute(text("ALTER TABLE appointment ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
+                        conn.commit()
 
         except Exception as e:
             print(f"⚠️ Error en inspección manual: {e}")
