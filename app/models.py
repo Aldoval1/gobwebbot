@@ -128,6 +128,8 @@ class TrafficFine(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+    author = db.relationship('User', foreign_keys=[author_id])
+
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text)
