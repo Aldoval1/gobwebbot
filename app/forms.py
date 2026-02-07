@@ -32,11 +32,7 @@ class OfficialRegistrationForm(FlaskForm):
     dni = StringField('DNI', validators=[DataRequired()])
     badge_id = StringField('Placa ID', validators=[DataRequired()])
     department = SelectField('Departamento', choices=[
-        ('Policia', 'Policía (LSPD)'), 
-        ('Sheriff', 'Sheriff (BCSO)'),
-        ('SABES', 'Médicos (SABES)'), 
-        ('Mecanico', 'Mecánicos'), 
-        ('Taxista', 'Taxistas'),
+        ('SABES', 'SABES (Médicos)'),
         ('Gobierno', 'Gobierno')
     ], validators=[DataRequired()])
     photo = FileField('Foto Credencial', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
@@ -78,11 +74,7 @@ class CreateLeaderForm(FlaskForm):
     dni = StringField('DNI (Existente)', validators=[DataRequired()])
     badge_id = StringField('Placa ID', validators=[DataRequired()])
     department = SelectField('Departamento', choices=[
-        ('Policia', 'Policía (LSPD)'), 
-        ('Sheriff', 'Sheriff (BCSO)'),
-        ('SABES', 'Médicos (SABES)'), 
-        ('Mecanico', 'Mecánicos'), 
-        ('Taxista', 'Taxistas'),
+        ('SABES', 'SABES (Médicos)'),
         ('Gobierno', 'Gobierno')
     ], validators=[DataRequired()])
     password = PasswordField('Contraseña', validators=[DataRequired()])
