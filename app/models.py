@@ -71,8 +71,8 @@ class Business(db.Model):
 class License(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(100))
-    status = db.Column(db.String(20), default='Activa')
-    issue_date = db.Column(db.Date, default=datetime.utcnow().date)
+    status = db.Column(db.String(20), default='Pendiente')
+    issue_date = db.Column(db.Date, nullable=True)
     expiration_date = db.Column(db.Date, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     business_id = db.Column(db.Integer, db.ForeignKey('business.id'), nullable=True)

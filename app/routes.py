@@ -393,6 +393,17 @@ def licenses():
 
     business_form = BusinessLicenseForm()
 
+    # Check for expired licenses
+    expired_count = 0
+    for lic in current_user.licenses:
+        if lic.status == 'Activa' and lic.expiration_date and lic.expiration_date < datetime.utcnow().date():
+            lic.status = 'Vencida'
+            expired_count += 1
+
+    if expired_count > 0:
+        db.session.commit()
+        flash(f'¡Atención! Tienes {expired_count} licencia(s) vencida(s). Renuevalas cuanto antes.', 'warning')
+
     if request.method == 'POST':
         # --- Lógica de Compra de Licencias Personales ---
         if 'licenses' in request.form:
@@ -406,19 +417,19 @@ def licenses():
                 if lic in personal_license_prices:
                     valid_licenses.append(lic)
 
-            expiration = datetime.utcnow().date() + timedelta(days=30)
-
+            # status='Pendiente', expiration_date=None until approved
             for lic in valid_licenses:
                 new_license = License(
                     type=license_names.get(lic, lic),
-                    status='Activa',
-                    expiration_date=expiration,
+                    status='Pendiente',
+                    issue_date=None,
+                    expiration_date=None,
                     user_id=current_user.id
                 )
                 db.session.add(new_license)
 
             db.session.commit()
-            flash(f'Licencias añadidas con éxito.')
+            flash(f'Solicitud de licencias enviada. Espera la aprobación de un agente del SABES.')
             return redirect(url_for('main.licenses'))
 
     return render_template('licenses.html', 
@@ -468,13 +479,14 @@ def register_business():
         db.session.commit() # Commit para obtener el ID del negocio
 
         # Crear Licencias vinculadas al negocio
-        expiration = datetime.utcnow().date() + timedelta(days=30)
+        # Estado inicial Pendiente
         
         # 1. Licencia de Funcionamiento (Obligatoria)
         lic1 = License(
             type='Licencia de Funcionamiento',
-            status='Activa',
-            expiration_date=expiration,
+            status='Pendiente',
+            issue_date=None,
+            expiration_date=None,
             user_id=current_user.id,
             business_id=new_business.id
         )
@@ -484,15 +496,16 @@ def register_business():
         if extra_license_name:
             lic2 = License(
                 type=extra_license_name,
-                status='Activa',
-                expiration_date=expiration,
+                status='Pendiente',
+                issue_date=None,
+                expiration_date=None,
                 user_id=current_user.id,
                 business_id=new_business.id
             )
             db.session.add(lic2)
 
         db.session.commit()
-        flash(f'Negocio "{form.name.data}" registrado exitosamente.')
+        flash(f'Negocio "{form.name.data}" registrado. Licencias pendientes de aprobación por SABES.')
         return redirect(url_for('main.licenses'))
     
     else:
@@ -609,6 +622,41 @@ def official_action(user_id, action):
 
     db.session.commit()
     return redirect(url_for('main.official_dashboard'))
+
+@bp.route('/official/licenses/pending')
+@login_required
+def official_licenses_pending():
+    if not current_user.badge_id or current_user.department != 'SABES':
+        flash('Acceso denegado. Solo personal de SABES.')
+        return redirect(url_for('main.official_dashboard'))
+
+    pending_licenses = License.query.filter_by(status='Pendiente').all()
+    return render_template('manage_licenses.html', licenses=pending_licenses)
+
+@bp.route('/official/licenses/action/<int:license_id>/<action>', methods=['POST'])
+@login_required
+def official_license_action(license_id, action):
+    if not current_user.badge_id or current_user.department != 'SABES':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.official_dashboard'))
+
+    lic = License.query.get_or_404(license_id)
+
+    if action == 'approve':
+        lic.status = 'Activa'
+        lic.issue_date = datetime.utcnow().date()
+        lic.expiration_date = datetime.utcnow().date() + timedelta(days=30)
+        flash(f'Licencia {lic.type} aprobada para {lic.holder.first_name} {lic.holder.last_name}. Expira en 30 días.')
+
+        notify_discord_bot(lic.holder, f"✅ **Licencia Aprobada**\nTu licencia '{lic.type}' ha sido aprobada y es válida hasta el {lic.expiration_date}.")
+
+    elif action == 'reject':
+        lic.status = 'Rechazada'
+        flash(f'Licencia {lic.type} rechazada.')
+        notify_discord_bot(lic.holder, f"❌ **Licencia Rechazada**\nTu solicitud para la licencia '{lic.type}' ha sido rechazada. Contacta a SABES para más información.")
+
+    db.session.commit()
+    return redirect(url_for('main.official_licenses_pending'))
 
 # --- GOVERNMENT DASHBOARD & PAYROLL ---
 
