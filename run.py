@@ -7,9 +7,8 @@ from sqlalchemy.exc import ProgrammingError, InvalidRequestError
 
 # Importar modelos para que SQLAlchemy sepa qué tablas crear
 from app.models import (
-    User, BankAccount, GovernmentFund, Lottery, 
-    TrafficFine, Comment, License, CriminalRecord, 
-    LotteryTicket, PayrollRequest, PayrollItem, Appointment, Business
+    User, TrafficFine, Comment, License, CriminalRecord,
+    Appointment, Business
 )
 
 load_dotenv()
@@ -22,97 +21,12 @@ with app.app_context():
     try:
         print("🔄 Verificando estado de la Base de Datos...")
         
-        # 0. INTENTO DE MIGRACIÓN (Flask-Migrate)
-        try:
-            print("🛠️ Aplicando migraciones pendientes...")
-            upgrade() 
-            print("✅ Migraciones aplicadas.")
-        except Exception as e:
-            # Es normal que falle si la DB ya está al día o hay conflictos menores
-            print(f"⚠️ Nota sobre upgrade(): {e}")
-
-        # 1. REPARACIÓN MANUAL DE SCHEMA (Si las migraciones fallan)
-        try:
-            inspector = inspect(db.engine)
-            
-            # --- REPARACIÓN FONDO GOBIERNO ---
-            if 'government_fund' in inspector.get_table_names():
-                existing_columns = [col['name'] for col in inspector.get_columns('government_fund')]
-                if 'expenses_description' not in existing_columns:
-                    print("🔧 Reparando DB: Agregando columna 'expenses_description'...")
-                    with db.engine.connect() as conn:
-                        conn.execute(text("ALTER TABLE government_fund ADD COLUMN expenses_description TEXT"))
-                        conn.commit()
-                if 'net_benefits' not in existing_columns:
-                    print("🔧 Reparando DB: Agregando columna 'net_benefits'...")
-                    with db.engine.connect() as conn:
-                        conn.execute(text("ALTER TABLE government_fund ADD COLUMN net_benefits FLOAT DEFAULT 0.0"))
-                        conn.commit()
-            
-            # --- REPARACIÓN LICENCIAS ---
-            if 'license' in inspector.get_table_names():
-                existing_columns = [col['name'] for col in inspector.get_columns('license')]
-                if 'issue_date' not in existing_columns:
-                    print("🔧 Reparando DB: Agregando columna 'issue_date' a License...")
-                    with db.engine.connect() as conn:
-                        conn.execute(text("ALTER TABLE license ADD COLUMN issue_date DATE DEFAULT CURRENT_DATE"))
-                        conn.commit()
-                if 'business_id' not in existing_columns:
-                    print("🔧 Reparando DB: Agregando columna 'business_id' a License...")
-                    with db.engine.connect() as conn:
-                        conn.execute(text("ALTER TABLE license ADD COLUMN business_id INTEGER REFERENCES business(id)"))
-                        conn.commit()
-
-            # --- REPARACIÓN COMMENTS ---
-            if 'comment' in inspector.get_table_names():
-                existing_columns = [col['name'] for col in inspector.get_columns('comment')]
-                if 'timestamp' not in existing_columns:
-                    if 'created_at' in existing_columns:
-                        print("🔧 Reparando DB: Renombrando 'created_at' a 'timestamp' en Comment...")
-                        with db.engine.connect() as conn:
-                            conn.execute(text("ALTER TABLE comment RENAME COLUMN created_at TO timestamp"))
-                            conn.commit()
-                    else:
-                        print("🔧 Reparando DB: Agregando columna 'timestamp' a Comment...")
-                        with db.engine.connect() as conn:
-                            conn.execute(text("ALTER TABLE comment ADD COLUMN timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
-                            conn.commit()
-
-            # --- REPARACIÓN APPOINTMENT (Falta created_at) ---
-            if 'appointment' in inspector.get_table_names():
-                existing_columns = [col['name'] for col in inspector.get_columns('appointment')]
-                if 'created_at' not in existing_columns:
-                    print("🔧 Reparando DB: Agregando columna 'created_at' a Appointment...")
-                    with db.engine.connect() as conn:
-                        conn.execute(text("ALTER TABLE appointment ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"))
-                        conn.commit()
-
-        except Exception as e:
-            print(f"⚠️ Error en inspección manual: {e}")
-
         # 2. Crear Tablas (Si no existen, incluyendo Business)
         try:
-            # db.create_all() intenta crear tablas. Si ya existen y falla, capturamos el error.
             db.create_all()
             print("✅ Tablas verificadas.")
-        except ProgrammingError as e:
-            if "already exists" in str(e):
-                print("⚠️ Tablas ya existen (Error ignorado, continuando).")
-            else:
-                print(f"❌ Error en create_all: {e}")
         except Exception as e:
              print(f"❌ Error genérico en create_all: {e}")
-
-        # 3. Inicializar Lotería y Fondo (Si no existen)
-        if not GovernmentFund.query.first():
-            # INICIALIZACIÓN EN 0.0 (PETICIÓN DE USUARIO)
-            db.session.add(GovernmentFund(balance=0.0))
-            print("💰 Fondo de Gobierno inicializado en 0.00.")
-        
-        if not Lottery.query.first():
-            from datetime import datetime
-            db.session.add(Lottery(current_jackpot=50000.0, last_run_date=datetime.utcnow().date()))
-            print("🎰 Lotería inicializada.")
 
         # 4. Crear Super Admin '000' (Si no existe)
         admin = User.query.filter_by(badge_id="000").first()
@@ -129,19 +43,10 @@ with app.app_context():
                 official_rank="Lider",
                 official_status="Aprobado",
                 selfie_filename="default.jpg",
-                dni_photo_filename="default.jpg",
-                salary_account_number="GOV-000"
+                dni_photo_filename="default.jpg"
             )
             admin.set_password("000")
             db.session.add(admin)
-            
-            # Crear cuenta bancaria asociada al gobierno
-            admin_bank = BankAccount(
-                account_number="GOV-000",
-                balance=10000000.0,
-                owner=admin
-            )
-            db.session.add(admin_bank)
             
             print("✅ Usuario Admin creado exitosamente.")
 

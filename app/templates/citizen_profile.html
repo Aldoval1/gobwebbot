@@ -97,16 +97,6 @@
                     </div>
                 </div>
 
-                <div class="section-card">
-                    <h4>Información Bancaria</h4>
-                    {% if citizen.bank_account %}
-                        <p><strong>Cuenta:</strong> {{ citizen.bank_account.account_number }}</p>
-                        <h3 class="text-success">${{ "{:,.2f}".format(citizen.bank_account.balance) }}</h3>
-                    {% else %}
-                        <p class="text-muted">Este ciudadano no tiene cuenta bancaria.</p>
-                    {% endif %}
-                </div>
-
                 <!-- Licencias y Negocios -->
                 <div class="section-card">
                     <h4>Licencias Personales</h4>
@@ -178,36 +168,8 @@
                     {% endif %}
                 {% endwith %}
 
-                <!-- Panel de Control Financiero (Solo Gobierno) -->
-                {% if can_adjust_balance %}
-                <div class="card mb-4 border-warning">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">Control Financiero (Gobierno)</h5>
-                    </div>
-                    <div class="card-body">
-                        <form action="{{ url_for('main.adjust_citizen_balance', user_id=citizen.id) }}" method="POST">
-                            {{ adjust_balance_form.hidden_tag() }}
-                            <div class="mb-3">
-                                <label class="form-label">Operación</label>
-                                {{ adjust_balance_form.operation(class="form-select") }}
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Cantidad</label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    {{ adjust_balance_form.amount(class="form-control", placeholder="0.00") }}
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Razón / Motivo</label>
-                                {{ adjust_balance_form.reason(class="form-control", rows=2) }}
-                            </div>
-                            <button type="submit" class="btn btn-dark w-100">Aplicar Ajuste</button>
-                        </form>
-                    </div>
-                </div>
-
                 <!-- NUEVO: Panel de Administración de Identidad (Solo Gobierno) -->
+                {% if current_user.department == 'Gobierno' %}
                 <div class="card mb-4 border-danger">
                     <div class="card-header bg-danger text-white">
                         <h5 class="mb-0">Administración de Identidad</h5>
@@ -288,7 +250,6 @@
                                 <thead>
                                     <tr>
                                         <th>Fecha</th>
-                                        <th>Monto</th>
                                         <th>Razón</th>
                                         <th>Estado</th>
                                     </tr>
@@ -297,7 +258,6 @@
                                     {% for fine in citizen.traffic_fines %}
                                     <tr>
                                         <td>{{ fine.date.strftime('%d/%m') }}</td>
-                                        <td>${{ fine.amount }}</td>
                                         <td>{{ fine.reason }}</td>
                                         <td>
                                             <span class="badge bg-{{ 'success' if fine.status == 'Pagada' else 'danger' }}">
@@ -382,7 +342,6 @@
                 <div class="modal-body">
                     <form action="{{ url_for('main.add_traffic_fine', user_id=citizen.id) }}" method="POST">
                         {{ fine_form.hidden_tag() }}
-                        <div class="mb-3">{{ fine_form.amount.label }} {{ fine_form.amount(class="form-control") }}</div>
                         <div class="mb-3">{{ fine_form.reason.label }} {{ fine_form.reason(class="form-control") }}</div>
                         <button type="submit" class="btn btn-warning w-100">Imponer</button>
                     </form>
@@ -392,7 +351,7 @@
     </div>
     {% endif %}
 
-    {% if can_adjust_balance %}
+    {% if current_user.department == 'Gobierno' %}
     <div id="editInfoModal" class="modal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
        <!-- ... Contenido EditInfo ... -->
        <div class="modal-dialog"><div class="modal-content"><div class="modal-body">

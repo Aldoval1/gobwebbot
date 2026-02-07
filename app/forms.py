@@ -39,7 +39,6 @@ class OfficialRegistrationForm(FlaskForm):
         ('Taxista', 'Taxistas'),
         ('Gobierno', 'Gobierno')
     ], validators=[DataRequired()])
-    account_number = StringField('Cuenta Bancaria Personal', validators=[DataRequired()])
     photo = FileField('Foto Credencial', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
     password = PasswordField('Contraseña', validators=[DataRequired()])
     confirm_password = PasswordField('Confirmar Contraseña', validators=[DataRequired(), EqualTo('password')])
@@ -54,69 +53,18 @@ class CriminalRecordForm(FlaskForm):
     crime = StringField('Delito / Crimen', validators=[DataRequired()])
     penal_code = StringField('Código Penal', validators=[DataRequired()])
     report_text = TextAreaField('Informe Detallado', validators=[DataRequired()])
-    subject_photos = SelectMultipleField('Fotos del Sujeto', choices=[], validate_choice=False) # Handled manually
-    evidence_photos = SelectMultipleField('Fotos Evidencia', choices=[], validate_choice=False) # Handled manually
-    
-    # Files upload fields for the form (not model fields)
     subject_photos = FileField('Fotos del Sujeto', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Imágenes only')], render_kw={'multiple': True})
     evidence_photos = FileField('Evidencia', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Imágenes only')], render_kw={'multiple': True})
 
     submit = SubmitField('Registrar Antecedente')
 
 class TrafficFineForm(FlaskForm):
-    amount = FloatField('Monto Multa', validators=[DataRequired()])
     reason = StringField('Razón', validators=[DataRequired()])
     submit = SubmitField('Imponer Multa')
 
 class CommentForm(FlaskForm):
     content = TextAreaField('Comentario', validators=[DataRequired()])
     submit = SubmitField('Agregar Nota')
-
-class TransferForm(FlaskForm):
-    account_number = StringField('Cuenta Destino', validators=[DataRequired(), Length(min=10, max=10)])
-    amount = FloatField('Monto', validators=[DataRequired(), NumberRange(min=1)])
-    submit = SubmitField('Transferir')
-
-class LoanForm(FlaskForm):
-    accept_terms = BooleanField('Acepto los términos', validators=[DataRequired()])
-    submit = SubmitField('Solicitar Préstamo Rápido ($5500)')
-
-class LoanRepayForm(FlaskForm):
-    amount = FloatField('Monto a Pagar', validators=[DataRequired(), NumberRange(min=1)])
-    submit = SubmitField('Pagar Préstamo')
-
-class SavingsForm(FlaskForm):
-    amount = FloatField('Monto a Depositar', validators=[DataRequired(), NumberRange(min=1)])
-    submit = SubmitField('Depositar (Bloqueo 30 días)')
-
-class CardCustomizationForm(FlaskForm):
-    style = RadioField('Estilo de Tarjeta', choices=[
-        ('blue', 'Azul Clásico'),
-        ('gold', 'Gold Elite'),
-        ('black', 'Black Infinite'),
-        ('custom', 'Personalizado (Subir Imagen)')
-    ], default='blue')
-    custom_image = FileField('Imagen Personalizada', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
-    submit = SubmitField('Guardar Diseño')
-
-class LotteryTicketForm(FlaskForm):
-    numbers = StringField('Tus 5 Números', validators=[DataRequired(), Length(min=5, max=5)])
-    submit = SubmitField('Comprar Ticket ($500)')
-
-class AdjustBalanceForm(FlaskForm):
-    operation = SelectField('Operación', choices=[('add', 'Añadir Fondos (+)'), ('sub', 'Retirar Fondos (-)')])
-    amount = FloatField('Cantidad', validators=[DataRequired(), NumberRange(min=0.01)])
-    reason = TextAreaField('Motivo del Ajuste', validators=[DataRequired()])
-    submit = SubmitField('Aplicar Ajuste')
-
-class GovFundAdjustForm(FlaskForm):
-    operation = SelectField('Operación', choices=[('add', 'Ingresar Fondos'), ('sub', 'Retirar Fondos')])
-    amount = FloatField('Cantidad', validators=[DataRequired(), NumberRange(min=0.01)])
-    submit = SubmitField('Ejecutar')
-
-class SalaryForm(FlaskForm):
-    salary = FloatField('Sueldo', validators=[DataRequired(), NumberRange(min=0)])
-    submit = SubmitField('Actualizar Sueldo')
 
 class AppointmentForm(FlaskForm):
     date = DateField('Fecha', validators=[DataRequired()])
@@ -129,7 +77,6 @@ class CreateLeaderForm(FlaskForm):
     last_name = StringField('Apellido', validators=[DataRequired()])
     dni = StringField('DNI (Existente)', validators=[DataRequired()])
     badge_id = StringField('Placa ID', validators=[DataRequired()])
-    account_number = StringField('Cuenta Bancaria', validators=[DataRequired()])
     department = SelectField('Departamento', choices=[
         ('Policia', 'Policía (LSPD)'), 
         ('Sheriff', 'Sheriff (BCSO)'),
@@ -140,11 +87,6 @@ class CreateLeaderForm(FlaskForm):
     ], validators=[DataRequired()])
     password = PasswordField('Contraseña', validators=[DataRequired()])
     submit = SubmitField('Crear Líder')
-
-class GovFinancialsForm(FlaskForm):
-    expenses_description = TextAreaField('Descripción de Gastos y Presupuesto')
-    net_benefits = FloatField('Beneficios Netos', validators=[Optional()])
-    submit = SubmitField('Actualizar Finanzas')
 
 class EditCitizenForm(FlaskForm):
     first_name = StringField('Nombre', validators=[DataRequired()])
@@ -177,7 +119,7 @@ class BusinessLicenseForm(FlaskForm):
     location_x = FloatField('Pos X', validators=[DataRequired()])
     location_y = FloatField('Pos Y', validators=[DataRequired()])
     photo = FileField('Foto del Local (Exterior)', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
-    submit = SubmitField('Registrar y Pagar')
+    submit = SubmitField('Registrar')
 
 class UserPhotoForm(FlaskForm):
     photo = FileField('Nueva Foto de Perfil', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])

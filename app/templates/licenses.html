@@ -136,11 +136,10 @@
                                         <input class="form-check-input me-1" type="checkbox" name="licenses" value="{{ key }}">
                                         Licencia de {{ key }}
                                     </span>
-                                    <span class="badge bg-primary rounded-pill">${{ price }}</span>
                                 </label>
                                 {% endfor %}
                             </div>
-                            <button type="submit" class="btn btn-success w-100">Pagar y Obtener</button>
+                            <button type="submit" class="btn btn-success w-100">Obtener</button>
                         </form>
                     </div>
                     <div class="col-md-6">
@@ -196,15 +195,7 @@
                                 </div>
                                 <div class="mb-3 position-relative">
                                     <label class="form-label">Tipo de Negocio</label>
-                                    {{ business_form.business_type(class="form-select", id="businessTypeSelect", onchange="updatePrice()") }}
-                                    <small class="text-muted">Selecciona para ver el costo.</small>
-                                    
-                                    <!-- Etiqueta de Precio Flotante -->
-                                    <div class="mt-3 text-center">
-                                        <div class="price-badge">
-                                            Total a Pagar: <span id="priceDisplay">$4,000</span>
-                                        </div>
-                                    </div>
+                                    {{ business_form.business_type(class="form-select", id="businessTypeSelect") }}
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Foto del Local (Exterior)</label>
@@ -238,11 +229,7 @@
                             </div>
                         </div>
 
-                        <div class="alert alert-warning mt-3">
-                            <strong>Nota:</strong> Al registrarse se cobrará automáticamente el costo de la licencia mensual.
-                        </div>
-
-                        <button type="submit" class="btn btn-success w-100 btn-lg">Registrar y Pagar</button>
+                        <button type="submit" class="btn btn-success w-100 btn-lg">Registrar</button>
                     </form>
                 </div>
             </div>
@@ -251,39 +238,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // --- LÓGICA DE PRECIOS ---
-        const prices = {
-            '247': 4000 + 3000,
-            'Pharmacy': 4000 + 2500,
-            'Mechanic': 4000 + 3500,
-            'Restaurant': 4000 + 3000,
-            'GasStation': 4000 + 3000,
-            'Club': 4000 + 3000,
-            'Bar': 4000 + 3000,
-            'UsedCars': 4000 + 2500,
-            'SexShop': 4000,
-            'Groceries': 4000,
-            'Hardware': 4000,
-            'Barber': 4000,
-            'Clothes': 4000
-        };
-
-        function updatePrice() {
-            const select = document.getElementById('businessTypeSelect');
-            const display = document.getElementById('priceDisplay');
-            const val = select.value;
-            
-            if (prices[val]) {
-                display.textContent = '$' + prices[val].toLocaleString();
-            } else {
-                display.textContent = '$4,000'; // Default base
-            }
-        }
-
-        // Inicializar precio al cargar
-        document.addEventListener('DOMContentLoaded', updatePrice);
-
-
         // --- LÓGICA DEL MAPA (ZOOM + PAN + MARKER) ---
         const wrapper = document.getElementById('mapWrapper');
         const content = document.getElementById('mapContent');
