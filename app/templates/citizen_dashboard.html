@@ -273,8 +273,11 @@
                 <small>Portal del Ciudadano</small>
             </div>
         </div>
-        <div>
-            <span style="margin-right: 20px; font-weight: 500; font-size: 1.1em;">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <a href="{{ url_for('main.settings_notifications') }}" title="Configuración" style="color: white; font-size: 1.2em; text-decoration: none;">
+                <i class="fas fa-cog"></i>
+            </a>
+            <span style="font-weight: 500; font-size: 1.1em;">{{ current_user.first_name }} {{ current_user.last_name }}</span>
             <a href="{{ url_for('main.logout') }}" class="logout-btn">
                 <i class="fas fa-sign-out-alt"></i> Salir
             </a>
