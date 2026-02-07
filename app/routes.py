@@ -776,7 +776,7 @@ def citizen_profile(user_id):
 
     citizen = User.query.get_or_404(user_id)
 
-    can_edit_reports = current_user.department in ['Policia', 'Sheriff', 'SABES', 'Gobierno']
+    can_edit_reports = current_user.department in ['SABES', 'Gobierno']
 
     comment_form = CommentForm()
     fine_form = TrafficFineForm()
@@ -847,7 +847,7 @@ def add_criminal_record(user_id):
     if not current_user.badge_id:
         return redirect(url_for('main.index'))
 
-    if current_user.department not in ['Policia', 'Sheriff', 'SABES', 'Gobierno']:
+    if current_user.department not in ['SABES', 'Gobierno']:
          flash('No tienes permiso para agregar antecedentes penales.')
          return redirect(url_for('main.citizen_profile', user_id=user_id))
     
