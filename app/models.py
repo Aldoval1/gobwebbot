@@ -15,8 +15,6 @@ class User(UserMixin, db.Model):
     department = db.Column(db.String(64), nullable=True)
     official_rank = db.Column(db.String(64), nullable=True)
     official_status = db.Column(db.String(20), default='Pendiente') # Pendiente, Aprobado, Suspendido
-    salary_account_number = db.Column(db.String(20), nullable=True)
-    salary = db.Column(db.Float, default=0.0) # Salario asignado
 
     # Images
     selfie_filename = db.Column(db.String(120), nullable=True)
@@ -28,7 +26,6 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships (Con CASCADE para permitir eliminación limpia de usuarios)
-    bank_account = db.relationship('BankAccount', backref='owner', uselist=False, cascade="all, delete-orphan")
     licenses = db.relationship('License', backref='holder', lazy='dynamic', cascade="all, delete-orphan")
     
     # Antecedentes
@@ -46,9 +43,6 @@ class User(UserMixin, db.Model):
     # Negocios
     businesses = db.relationship('Business', backref='owner', lazy='dynamic', cascade="all, delete-orphan")
 
-    # Lotería
-    tickets = db.relationship('LotteryTicket', backref='owner', lazy='dynamic', cascade="all, delete-orphan")
-
     # Citas (Appointments) - Importante para el error de borrado
     appointments_made = db.relationship('Appointment', foreign_keys='Appointment.citizen_id', backref='citizen', lazy=True, cascade="all, delete-orphan")
     appointments_received = db.relationship('Appointment', foreign_keys='Appointment.official_id', backref='official', lazy=True, cascade="all, delete-orphan")
@@ -61,42 +55,6 @@ class User(UserMixin, db.Model):
 
     def __repr__(self):
         return f'<User {self.dni}>'
-
-class BankAccount(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    account_number = db.Column(db.String(20), unique=True, index=True)
-    balance = db.Column(db.Float, default=0.0)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    card_style = db.Column(db.String(20), default='blue') # blue, gold, black, custom
-    custom_image = db.Column(db.String(120), nullable=True)
-    
-    transactions = db.relationship('BankTransaction', backref='account', lazy='dynamic', cascade="all, delete-orphan")
-    loans = db.relationship('BankLoan', backref='account', lazy='dynamic', cascade="all, delete-orphan")
-    savings = db.relationship('BankSavings', backref='account', lazy='dynamic', cascade="all, delete-orphan")
-
-class BankTransaction(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('bank_account.id'))
-    type = db.Column(db.String(20))
-    amount = db.Column(db.Float)
-    related_account = db.Column(db.String(20), nullable=True)
-    description = db.Column(db.String(200))
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
-class BankLoan(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('bank_account.id'))
-    amount_due = db.Column(db.Float)
-    due_date = db.Column(db.DateTime)
-    status = db.Column(db.String(20), default='Active')
-    last_penalty_check = db.Column(db.DateTime, nullable=True)
-
-class BankSavings(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('bank_account.id'))
-    amount = db.Column(db.Float)
-    deposit_date = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20), default='Active')
 
 class Business(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -121,7 +79,6 @@ class License(db.Model):
 
 class TrafficFine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    amount = db.Column(db.Float)
     reason = db.Column(db.String(200))
     date = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20), default='Pendiente')
@@ -162,40 +119,6 @@ class CriminalRecordEvidencePhoto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(120))
     record_id = db.Column(db.Integer, db.ForeignKey('criminal_record.id'))
-
-class Lottery(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    current_jackpot = db.Column(db.Float, default=50000.0)
-    last_run_date = db.Column(db.Date)
-
-class LotteryTicket(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    numbers = db.Column(db.String(5))
-    date = db.Column(db.Date)
-
-class GovernmentFund(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    balance = db.Column(db.Float, default=1000000.0)
-    expenses_description = db.Column(db.Text, nullable=True)
-    net_benefits = db.Column(db.Float, default=0.0)
-
-class PayrollRequest(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    department = db.Column(db.String(64))
-    total_amount = db.Column(db.Float)
-    status = db.Column(db.String(20), default='Pending')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    items = db.relationship('PayrollItem', backref='request', lazy=True, cascade="all, delete-orphan")
-
-class PayrollItem(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    request_id = db.Column(db.Integer, db.ForeignKey('payroll_request.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    amount = db.Column(db.Float)
-    
-    user = db.relationship('User')
 
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)

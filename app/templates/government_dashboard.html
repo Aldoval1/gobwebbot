@@ -77,89 +77,9 @@
             {% endif %}
         {% endwith %}
 
-        <!-- SECCIÓN PRINCIPAL: FINANZAS Y CONTROL -->
-        <div class="card card-financial text-center p-4 border border-primary bg-light">
-            <h3 class="mb-4 text-primary">Control Financiero del Estado</h3>
-            
-            <!-- FORMULARIO EDITABLE PARA FONDOS DEL GOBIERNO -->
-            <form action="{{ url_for('main.government_balance_set') }}" method="POST" class="mb-4">
-                <div class="form-group">
-                    <label class="stat-label mb-2">Fondos del Gobierno (Editable)</label>
-                    <div class="input-group justify-content-center">
-                        <span class="input-group-text bg-white border-0" style="font-size: 2rem;">$</span>
-                        <input type="number" step="0.01" name="balance" class="money-input" value="{{ fund.balance }}">
-                        <button type="submit" class="btn btn-primary ms-2 px-4">Actualizar</button>
-                    </div>
-                    <small class="text-muted">Introduce la cantidad exacta que posee el gobierno.</small>
-                </div>
-            </form>
-
-            <hr class="w-75 mx-auto my-4">
-
-            <!-- VISUALIZACIÓN DE RIQUEZA CIUDADANA (DEBAJO, COMO PEDISTE) -->
-            <div class="row justify-content-center">
-                <div class="col-md-8">
-                    <div class="p-3 rounded bg-white border">
-                        <div class="stat-label">Dinero Total de los Ciudadanos</div>
-                        <div class="stat-value text-success">${{ "{:,.2f}".format(total_user_money) }}</div>
-                        <small class="text-muted">Suma acumulada de todas las cuentas bancarias personales</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- SECCIÓN DE GESTIÓN DE SALDOS DE USUARIOS (NUEVO) -->
-        <div class="card card-financial p-4 mb-4 border border-secondary">
-            <h4 class="text-secondary mb-3">Gestión Rápida de Saldos Ciudadanos</h4>
-            <p class="small text-muted mb-3">Selecciona un ciudadano para ver y editar su saldo bancario actual.</p>
-            
-            <form action="{{ url_for('main.government_user_balance_update') }}" method="POST" class="row g-3 align-items-end">
-                <div class="col-md-5">
-                    <label class="form-label">Seleccionar Ciudadano</label>
-                    <select class="form-select" id="userSelect" name="user_id" onchange="updateBalanceInput()" required>
-                        <option value="" selected disabled>-- Elige un usuario --</option>
-                        {% for user in all_users %}
-                            <option value="{{ user.id }}" data-balance="{{ user.bank_account.balance }}">
-                                {{ user.first_name }} {{ user.last_name }} (DNI: {{ user.dni }}) - Saldo Actual: ${{ "{:,.2f}".format(user.bank_account.balance) }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Nuevo Saldo</label>
-                    <div class="input-group">
-                        <span class="input-group-text">$</span>
-                        <input type="number" step="0.01" class="form-control" name="balance" id="userBalanceInput" placeholder="0.00" required>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <button type="submit" class="btn btn-warning w-100 fw-bold">Actualizar Saldo</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- SECCIÓN SECUNDARIA: DETALLES Y ACCIONES -->
+        <!-- SECCIÓN PRINCIPAL: ACCIONES -->
         <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                <div class="card card-financial p-3 h-100">
-                    <h5 class="text-secondary">Estadísticas Adicionales</h5>
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <span>Deuda Total (Préstamos):</span>
-                        <span class="fw-bold text-danger">${{ "{:,.2f}".format(total_loans) }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <span>Beneficios Netos:</span>
-                        <span class="fw-bold text-success">${{ "{:,.2f}".format(fund.net_benefits) }}</span>
-                    </div>
-                    <button class="btn btn-sm btn-outline-dark mt-3" onclick="openModal('financialsModal')">Editar Detalles Financieros</button>
-                    <div class="mt-2 text-muted small">
-                        <strong>Descripción Gastos:</strong><br>
-                        {{ fund.expenses_description }}
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="card card-financial p-3 h-100 d-flex flex-column justify-content-center">
                     <h5 class="text-secondary mb-3">Acciones Rápidas</h5>
                     <a href="{{ url_for('main.official_database') }}" class="btn btn-info text-white mb-2">Base de Datos Ciudadana</a>
@@ -167,71 +87,9 @@
                 </div>
             </div>
         </div>
-
-        <!-- TABLA DE NÓMINAS -->
-        <h3 class="mt-5">Solicitudes de Nómina Pendientes</h3>
-        {% if pending_payrolls %}
-        <div class="table-responsive">
-            <table class="table table-hover mt-3">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Departamento</th>
-                        <th>Total</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for req in pending_payrolls %}
-                    <tr>
-                        <td>{{ req.department }}</td>
-                        <td>${{ "{:,.2f}".format(req.total_amount) }}</td>
-                        <td>{{ req.created_at.strftime('%d/%m/%Y') }}</td>
-                        <td>
-                            <form action="{{ url_for('main.government_payroll_action', req_id=req.id, action='approve') }}" method="POST" style="display:inline;">
-                                <button type="submit" class="btn btn-success btn-sm">Aprobar</button>
-                            </form>
-                            <form action="{{ url_for('main.government_payroll_action', req_id=req.id, action='reject') }}" method="POST" style="display:inline;">
-                                <button type="submit" class="btn btn-danger btn-sm">Rechazar</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        {% else %}
-            <div class="alert alert-secondary mt-3">No hay solicitudes pendientes.</div>
-        {% endif %}
     </div>
 
-    <!-- Modals (Sin cambios funcionales, solo estilo) -->
-    
-    <!-- Financials Edit Modal -->
-    <div id="financialsModal" class="modal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Editar Detalles Financieros</h5>
-                    <button type="button" class="btn-close" onclick="closeModal('financialsModal')"></button>
-                </div>
-                <div class="modal-body">
-                    <form action="{{ url_for('main.government_financials_update') }}" method="POST">
-                        {{ financials_form.hidden_tag() }}
-                        <div class="mb-3">
-                            <label class="form-label">Descripción de Gastos</label>
-                            {{ financials_form.expenses_description(class="form-control", rows=3) }}
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Beneficios Netos</label>
-                            {{ financials_form.net_benefits(class="form-control") }}
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100">Guardar Cambios</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Modals -->
 
     <!-- Leader Modal -->
     <div id="leaderModal" class="modal" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
@@ -250,7 +108,6 @@
                         </div>
                         {{ create_leader_form.dni(class="form-control mb-2", placeholder="DNI") }}
                         {{ create_leader_form.badge_id(class="form-control mb-2", placeholder="Placa ID") }}
-                        {{ create_leader_form.account_number(class="form-control mb-2", placeholder="Cuenta Bancaria (Existente)") }}
                         {{ create_leader_form.department(class="form-control mb-2", placeholder="Departamento") }}
                         {{ create_leader_form.password(class="form-control mb-3", placeholder="Contraseña") }}
                         <button type="submit" class="btn btn-warning w-100">Crear Líder</button>
@@ -270,19 +127,6 @@
             document.getElementById(id).classList.remove('show');
         }
         
-        // Función para autocompletar el saldo cuando se selecciona un usuario
-        function updateBalanceInput() {
-            var select = document.getElementById('userSelect');
-            var selectedOption = select.options[select.selectedIndex];
-            var balance = selectedOption.getAttribute('data-balance');
-            
-            if (balance) {
-                document.getElementById('userBalanceInput').value = parseFloat(balance).toFixed(2);
-            } else {
-                document.getElementById('userBalanceInput').value = '';
-            }
-        }
-
         // Cerrar al hacer click fuera
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {

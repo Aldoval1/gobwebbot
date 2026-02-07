@@ -170,7 +170,7 @@
             {% endif %}
         {% endwith %}
 
-        <h2>Multas Pendientes</h2>
+        <h2>Historial de Multas</h2>
         <ul class="fine-list">
             {% for fine in fines %}
             <li class="fine-item">
@@ -178,33 +178,13 @@
                     <div class="fine-reason">{{ fine.reason }}</div>
                     <div class="fine-meta">Fecha: {{ fine.date.strftime('%d/%m/%Y') }} | Oficial: {{ fine.author.first_name }} {{ fine.author.last_name }}</div>
                 </div>
-                <div class="fine-amount">${{ "%.2f"|format(fine.amount) }}</div>
 
-                <form action="{{ url_for('main.pay_fine', fine_id=fine.id) }}" method="POST" style="display:inline;">
-                    <button type="submit" class="btn-pay" onclick="return confirm('¿Estás seguro de que quieres pagar esta multa con tu cuenta bancaria?')">Pagar</button>
-                </form>
                 <button class="btn-report" onclick="openModal()">Reportar</button>
             </li>
             {% else %}
-            <p style="color: #7f8c8d; text-align: center;">¡Felicidades! No tienes multas pendientes.</p>
+            <p style="color: #7f8c8d; text-align: center;">¡Felicidades! No tienes multas registradas.</p>
             {% endfor %}
         </ul>
-
-        {% if history %}
-        <h2 style="margin-top: 40px; color: #7f8c8d;">Historial de Pagos</h2>
-        <ul class="fine-list">
-            {% for fine in history %}
-            <li class="fine-item paid">
-                <div class="fine-details">
-                    <div class="fine-reason">{{ fine.reason }}</div>
-                    <div class="fine-meta">Fecha: {{ fine.date.strftime('%d/%m/%Y') }} | Oficial: {{ fine.author.first_name }} {{ fine.author.last_name }}</div>
-                </div>
-                <div class="fine-amount">${{ "%.2f"|format(fine.amount) }}</div>
-                <span style="color: #27ae60; font-weight: bold; margin-left: 10px;">PAGADA</span>
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
     </div>
 
     <!-- Report Modal -->
