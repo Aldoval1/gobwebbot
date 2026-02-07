@@ -149,8 +149,20 @@
                             {% for l in active_licenses %}
                                 {% if l.business_id is none %} <!-- Solo mostramos personales aquí -->
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                                        {{ l.type }}
-                                        <small class="text-muted">Expira: {{ l.expiration_date.strftime('%d/%m') }}</small>
+                                        <div>
+                                            {{ l.type }}
+                                            {% if l.status == 'Activa' %}
+                                                <small class="text-muted d-block">Expira: {{ l.expiration_date.strftime('%d/%m') }}</small>
+                                            {% endif %}
+                                        </div>
+                                        <span class="badge rounded-pill
+                                            {% if l.status == 'Activa' %}bg-success
+                                            {% elif l.status == 'Pendiente' %}bg-warning text-dark
+                                            {% elif l.status == 'Vencida' %}bg-danger
+                                            {% elif l.status == 'Rechazada' %}bg-secondary
+                                            {% else %}bg-info{% endif %}">
+                                            {{ l.status }}
+                                        </span>
                                     </li>
                                 {% endif %}
                             {% endfor %}

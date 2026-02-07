@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Licencias - SABES</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #ecf0f1; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-top: 30px; }
+        h1 { color: #2c3e50; }
+        .btn-action { margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Licencias Pendientes de Aprobación</h1>
+            <a href="{{ url_for('main.official_dashboard') }}" class="btn btn-secondary">Volver al Panel</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-info">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% if licenses %}
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Solicitante</th>
+                    <th>DNI</th>
+                    <th>Tipo de Licencia</th>
+                    <th>Negocio (Si aplica)</th>
+                    <th>Fecha Solicitud</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lic in licenses %}
+                <tr>
+                    <td>{{ lic.holder.first_name }} {{ lic.holder.last_name }}</td>
+                    <td>{{ lic.holder.dni }}</td>
+                    <td>{{ lic.type }}</td>
+                    <td>
+                        {% if lic.business %}
+                            {{ lic.business.name }} ({{ lic.business.type }})
+                        {% else %}
+                            <span class="text-muted">Personal</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <!-- Asumiendo que issue_date se usa como fecha solicitud cuando está pendiente, o mostramos created_at si existiera -->
+                        <!-- Usaremos una fecha genérica o el campo issue_date si lo reusamos como 'solicitado el' -->
+                        Hoy <!-- Simplificación, ya que no tenemos created_at en license -->
+                    </td>
+                    <td>
+                        <form action="{{ url_for('main.official_license_action', license_id=lic.id, action='approve') }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-success btn-sm btn-action">Aprobar</button>
+                        </form>
+                        <form action="{{ url_for('main.official_license_action', license_id=lic.id, action='reject') }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm btn-action" onclick="return confirm('¿Rechazar esta licencia?')">Rechazar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="alert alert-secondary text-center">
+                No hay solicitudes de licencias pendientes.
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
