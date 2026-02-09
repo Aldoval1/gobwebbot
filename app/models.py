@@ -23,7 +23,7 @@ class User(UserMixin, db.Model):
     # Discord Integration
     discord_id = db.Column(db.String(50), unique=True, nullable=True)
 
-    # Status & Settings
+    # Official Status & Notification Preferences
     on_duty = db.Column(db.Boolean, default=False)
     receive_notifications = db.Column(db.Boolean, default=True)
 
