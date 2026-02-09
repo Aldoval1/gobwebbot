@@ -23,6 +23,10 @@ class User(UserMixin, db.Model):
     # Discord Integration
     discord_id = db.Column(db.String(50), unique=True, nullable=True)
 
+    # Status & Settings
+    on_duty = db.Column(db.Boolean, default=False)
+    receive_notifications = db.Column(db.Boolean, default=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships (Con CASCADE para permitir eliminación limpia de usuarios)

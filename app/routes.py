@@ -49,6 +49,55 @@ def notify_discord_bot(user, message):
     except Exception as e:
         print(f"Error enviando notificación a Discord: {e}")
 
+@bp.route('/official/toggle_duty', methods=['POST'])
+@login_required
+def official_toggle_duty():
+    if current_user.department not in ['SABES', 'Gobierno']:
+        flash('Acceso denegado.')
+        return redirect(url_for('main.official_dashboard'))
+
+    current_user.on_duty = not current_user.on_duty
+    db.session.commit()
+
+    status_msg = "EN SERVICIO" if current_user.on_duty else "FUERA DE SERVICIO"
+    flash(f'Estado actualizado: {status_msg}')
+
+    if current_user.on_duty:
+        # Notificar a usuarios suscritos
+        subscribed_users = User.query.filter(User.discord_id.isnot(None), User.receive_notifications == True).all()
+
+        # En un entorno real, esto debería ser una tarea en segundo plano (Celery/Redis)
+        # para no bloquear la respuesta HTTP si hay muchos usuarios.
+        # Aquí simulamos enviando solo a los primeros 50 para evitar timeouts en este MVP.
+        count = 0
+        link = url_for('main.settings_notifications', _external=True)
+        message = (
+            f"👮 **{current_user.department}**\n"
+            f"El funcionario **{current_user.first_name} {current_user.last_name}** está ahora en servicio.\n\n"
+            f"Gestionar notificaciones: {link}"
+        )
+
+        for user in subscribed_users[:50]:
+            notify_discord_bot(user, message)
+            count += 1
+
+        print(f"Notificación de servicio enviada a {count} usuarios via Discord.")
+
+    return redirect(url_for('main.official_dashboard'))
+
+@bp.route('/settings/notifications', methods=['GET', 'POST'])
+@login_required
+def settings_notifications():
+    if request.method == 'POST':
+        # Simple toggle via form submit or check
+        enable = request.form.get('receive_notifications') == 'on'
+        current_user.receive_notifications = enable
+        db.session.commit()
+        flash('Preferencias de notificación actualizadas.')
+        return redirect(url_for('main.index'))
+
+    return render_template('settings.html')
+
 # --- API ROUTES FOR DISCORD BOT ---
 
 @bp.route('/api/check_citizen/<dni>', methods=['GET'])
