@@ -85,6 +85,47 @@
         input[type="text"]:focus, input[type="password"]:focus {
             border-color: #007bff;
             outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #6c757d;
+            padding: 0;
+            margin: 0;
+            width: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: #343a40;
+            background-color: transparent;
         }
 
         button {
@@ -162,14 +203,21 @@
             {% else %}
                 <form method="POST">
                     {{ form.hidden_tag() }}
-                    <div>
-                        {{ form.dni(placeholder="DNI") }}
+                    <div class="input-group">
+                        <label for="dni" class="input-label">DNI</label>
+                        {{ form.dni(placeholder="", id="dni") }}
                     </div>
-                    <div>
-                        {{ form.password(placeholder="Contraseña") }}
+                    <div class="input-group">
+                        <label for="password" class="input-label">Contraseña</label>
+                        <div class="password-wrapper">
+                            {{ form.password(placeholder="", id="password") }}
+                            <button type="button" class="password-toggle" onclick="togglePassword()" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                        </div>
                     </div>
                     <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
-                        {{ form.remember_me() }} {{ form.remember_me.label }}
+                        {{ form.remember_me() }} <label for="remember_me" style="cursor: pointer;">Recuérdame</label>
                     </div>
                     <button type="submit">Iniciar Sesión</button>
                 </form>
@@ -202,6 +250,23 @@
                 document.body.classList.remove('loading');
             }, 1500); // 1.5 seconds splash
         });
+
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleButton = document.querySelector('.password-toggle');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleButton.setAttribute('aria-label', 'Ocultar contraseña');
+                toggleButton.setAttribute('title', 'Ocultar contraseña');
+                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye-off"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>';
+            } else {
+                passwordInput.type = 'password';
+                toggleButton.setAttribute('aria-label', 'Mostrar contraseña');
+                toggleButton.setAttribute('title', 'Mostrar contraseña');
+                toggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+            }
+        }
     </script>
 </body>
 </html>
