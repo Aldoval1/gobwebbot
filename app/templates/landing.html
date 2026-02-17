@@ -62,11 +62,19 @@
             justify-content: center;
             align-items: center;
             background-color: #333;
+            position: relative;
         }
-        .banner img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .banner iframe {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 56.25vw; /* 16:9 Aspect Ratio */
+            min-height: 100%;
+            min-width: 177.77vh; /* 16:9 Aspect Ratio */
+            transform: translate(-50%, -50%);
+            pointer-events: none; /* Disable clicking/interactions */
+            border: none;
         }
     </style>
 </head>
@@ -84,8 +92,11 @@
     </header>
 
     <div class="banner">
-        <!-- Placeholder for GTA SA Image as requested -->
-        <img src="https://placehold.co/1920x800/1a1a1a/ffffff?text=Vista+Panoramica+San+Andreas+(GTA+SA)" alt="San Andreas Banner">
+        <iframe
+            src="https://www.youtube.com/embed/qyNqZbNftvg?autoplay=1&mute=1&controls=0&loop=1&playlist=qyNqZbNftvg&showinfo=0&modestbranding=1&disablekb=1&rel=0&iv_load_policy=3&cc_load_policy=0&fs=0"
+            title="San Andreas Panorama"
+            allow="autoplay; encrypted-media">
+        </iframe>
     </div>
 </body>
 </html>
