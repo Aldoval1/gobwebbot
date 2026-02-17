@@ -52,7 +52,8 @@ def notify_discord_bot(user, message):
 @bp.route('/official/toggle_duty', methods=['POST'])
 @login_required
 def official_toggle_duty():
-    if current_user.department not in ['SABES', 'Gobierno']:
+    allowed_departments = ['SABES', 'Gobierno', 'Ejecutivo', 'Legislativo', 'Judicial']
+    if current_user.department not in allowed_departments:
         flash('Acceso denegado.')
         return redirect(url_for('main.official_dashboard'))
 
@@ -132,7 +133,7 @@ def link_discord_api():
 def discord_login():
     if not DISCORD_CLIENT_ID or not DISCORD_CLIENT_SECRET:
         flash('Error: Faltan credenciales de Discord en la configuración (.env).')
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
     
     oauth_url = f"https://discord.com/oauth2/authorize?client_id={DISCORD_CLIENT_ID}&redirect_uri={DISCORD_REDIRECT_URI}&response_type=code&scope=identify"
     return redirect(oauth_url)
@@ -143,7 +144,7 @@ def discord_callback():
     code = request.args.get('code')
     if not code:
         flash('No se recibió código de autorización de Discord.')
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
 
     data = {
         'client_id': DISCORD_CLIENT_ID,
@@ -189,28 +190,41 @@ def discord_callback():
         print(f"Error OAuth Discord: {e}")
         flash('Hubo un error al conectar con Discord. Inténtalo de nuevo.')
 
-    return redirect(url_for('main.index'))
+    return redirect(url_for('main.citizen_dashboard'))
 
 # --- MAIN ROUTES ---
 
-@bp.route('/', methods=['GET', 'POST'])
+@bp.route('/')
 def index():
+    return render_template('landing.html')
+
+@bp.route('/login', methods=['GET', 'POST'])
+def login():
     if current_user.is_authenticated:
         if current_user.badge_id:
              return redirect(url_for('main.official_dashboard'))
-        return render_template('citizen_dashboard.html')
+        return redirect(url_for('main.citizen_dashboard'))
 
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(dni=form.dni.data, badge_id=None).first()
         if user is None or not user.check_password(form.password.data):
              flash('DNI o contraseña inválidos')
-             return redirect(url_for('main.index'))
+             return redirect(url_for('main.login'))
 
         login_user(user, remember=form.remember_me.data)
-        return redirect(url_for('main.index'))
+        if user.badge_id:
+            return redirect(url_for('main.official_dashboard'))
+        return redirect(url_for('main.citizen_dashboard'))
 
-    return render_template('login.html', form=form, logged_in=False)
+    return render_template('login.html', form=form)
+
+@bp.route('/citizen/dashboard')
+@login_required
+def citizen_dashboard():
+    if current_user.badge_id:
+        return redirect(url_for('main.official_dashboard'))
+    return render_template('citizen_dashboard.html')
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
@@ -251,7 +265,7 @@ def register():
         db.session.commit()
 
         flash('¡Cuenta creada con éxito! Ahora puedes iniciar sesión.')
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.login'))
 
     return render_template('register.html', form=form)
 
@@ -568,7 +582,7 @@ def official_login():
     if current_user.is_authenticated:
         if current_user.badge_id:
              return redirect(url_for('main.official_dashboard'))
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
 
     form = OfficialLoginForm()
     if form.validate_on_submit():
@@ -639,7 +653,7 @@ def official_register():
 @login_required
 def official_dashboard():
     if not current_user.badge_id:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
 
     pending_users = []
     if current_user.department == 'Gobierno' and current_user.official_rank == 'Lider':
@@ -653,7 +667,7 @@ def official_dashboard():
 @login_required
 def official_action(user_id, action):
     if not current_user.badge_id or current_user.official_rank != 'Lider':
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
 
     target_user = User.query.get_or_404(user_id)
 
@@ -800,7 +814,7 @@ def kick_member(user_id):
 @login_required
 def official_database():
     if not current_user.badge_id:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
 
     form = SearchUserForm(request.args)
     users = []
@@ -821,7 +835,7 @@ def official_database():
 @login_required
 def citizen_profile(user_id):
     if not current_user.badge_id:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
 
     citizen = User.query.get_or_404(user_id)
 
@@ -848,7 +862,7 @@ def citizen_profile(user_id):
 @login_required
 def add_comment(user_id):
     if not current_user.badge_id:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
 
     form = CommentForm()
     if form.validate_on_submit():
@@ -869,7 +883,7 @@ def add_comment(user_id):
 @login_required
 def add_traffic_fine(user_id):
     if not current_user.badge_id:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
 
     form = TrafficFineForm()
     citizen = User.query.get_or_404(user_id)
@@ -894,7 +908,7 @@ def add_traffic_fine(user_id):
 @login_required
 def add_criminal_record(user_id):
     if not current_user.badge_id:
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.citizen_dashboard'))
 
     if current_user.department not in ['SABES', 'Gobierno']:
          flash('No tienes permiso para agregar antecedentes penales.')

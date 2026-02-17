@@ -46,24 +46,6 @@
             overflow: hidden;
         }
 
-        /* LOADING STATE */
-        body.loading .login-container {
-            background-color: transparent;
-            box-shadow: none;
-            width: 100%; /* Allow centering without width constraint */
-        }
-
-        body.loading .logo-img {
-            transform: scale(3); /* Make logo large */
-            margin-bottom: 0;
-        }
-
-        body.loading .login-content {
-            opacity: 0;
-            max-height: 0;
-            margin: 0;
-        }
-
         /* Form Elements */
         h1 {
             color: #2c3e50;
@@ -148,19 +130,19 @@
 
     </style>
 </head>
-<body class="loading">
+<body>
     <div class="login-container">
         <img src="{{ url_for('static', filename='img/logo.png') }}" alt="San Andreas Government" class="logo-img">
 
         <div class="login-content">
             <h1>Gobierno de San Andreas</h1>
 
-            {% if logged_in %}
+            {% if current_user.is_authenticated %}
                 <p style="color: #28a745; margin-bottom: 20px;">Has iniciado sesión correctamente.</p>
                 <a href="{{ url_for('main.logout') }}"><button style="background-color: #dc3545;">Cerrar Sesión</button></a>
                  <a href="{{ url_for('main.citizen_dashboard') }}" style="display:block; margin-top:10px; text-decoration:none; color:#007bff;">Ir al Dashboard</a>
             {% else %}
-                <form method="POST">
+                <form method="POST" action="{{ url_for('main.login') }}">
                     {{ form.hidden_tag() }}
                     <div>
                         {{ form.dni(placeholder="DNI") }}
@@ -194,14 +176,5 @@
         </div>
     </div>
 
-    <script>
-        // Splash Screen Logic
-        document.addEventListener('DOMContentLoaded', () => {
-            // Wait a bit to show the logo in full size
-            setTimeout(() => {
-                document.body.classList.remove('loading');
-            }, 1500); // 1.5 seconds splash
-        });
-    </script>
 </body>
 </html>
