@@ -92,11 +92,52 @@
     </header>
 
     <div class="banner">
-        <iframe
-            src="https://www.youtube.com/embed/qyNqZbNftvg?autoplay=1&mute=1&controls=0&loop=1&playlist=qyNqZbNftvg&showinfo=0&modestbranding=1&disablekb=1&rel=0&iv_load_policy=3&cc_load_policy=0&fs=0"
-            title="San Andreas Panorama"
-            allow="autoplay; encrypted-media">
-        </iframe>
+        <div id="banner-video"></div>
     </div>
+
+    <script>
+        // Load the IFrame Player API code asynchronously.
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('banner-video', {
+                videoId: 'qyNqZbNftvg',
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 0,
+                    'disablekb': 1,
+                    'fs': 0,
+                    'loop': 1,
+                    'modestbranding': 1,
+                    'playsinline': 1,
+                    'rel': 0,
+                    'showinfo': 0,
+                    'iv_load_policy': 3,
+                    'playlist': 'qyNqZbNftvg' // Required for loop to work
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            event.target.mute();
+            event.target.setPlaybackRate(2); // Set to max speed (2x)
+            event.target.playVideo();
+        }
+
+        function onPlayerStateChange(event) {
+            // Ensure video loops if playlist doesn't handle it
+            if (event.data === YT.PlayerState.ENDED) {
+                player.playVideo();
+            }
+        }
+    </script>
 </body>
 </html>
