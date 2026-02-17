@@ -39,6 +39,67 @@ async def on_ready():
     # Iniciar servidor web interno para recibir órdenes de la web
     bot.loop.create_task(start_web_server())
 
+# --- EVENTO: MIEMBRO ENTRA ---
+@bot.event
+async def on_member_join(member):
+    if member.guild.id != GUILD_ID:
+        return
+
+    print(f"👋 Nuevo miembro: {member.display_name} ({member.id})")
+
+    # Fetch Config from Web App
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{WEB_APP_URL}/api/bot_config") as resp:
+                if resp.status != 200:
+                    print(f"❌ Error fetching bot config: {resp.status}")
+                    return
+                config = await resp.json()
+    except Exception as e:
+        print(f"❌ Exception fetching config: {e}")
+        return
+
+    # 1. AutoRoles
+    if config.get('autoroles_enabled') and config.get('autoroles_ids'):
+        role_ids = config['autoroles_ids'].split(',')
+        roles_to_add = []
+        for r_id in role_ids:
+            try:
+                role = member.guild.get_role(int(r_id))
+                if role:
+                    roles_to_add.append(role)
+            except ValueError:
+                continue
+
+        if roles_to_add:
+            try:
+                await member.add_roles(*roles_to_add)
+                print(f"✅ AutoRoles asignados a {member.display_name}: {[r.name for r in roles_to_add]}")
+            except discord.Forbidden:
+                print("❌ No tengo permisos para asignar roles.")
+            except Exception as e:
+                print(f"❌ Error asignando roles: {e}")
+
+    # 2. Welcome Message (DM)
+    if config.get('welcome_enabled') and config.get('welcome_message'):
+        try:
+            embed = discord.Embed(
+                description=config['welcome_message'],
+                color=0x00ff00
+            )
+            banner_url = config.get('welcome_banner_url')
+            if banner_url and banner_url.strip():
+                embed.set_image(url=banner_url)
+
+            embed.set_footer(text=f"Bienvenido a {member.guild.name}")
+
+            await member.send(embed=embed)
+            print(f"✅ Mensaje de bienvenida enviado a {member.display_name}")
+        except discord.Forbidden:
+            print(f"⚠️ No pude enviar DM a {member.display_name} (MDs cerrados)")
+        except Exception as e:
+            print(f"❌ Error enviando bienvenida: {e}")
+
 # --- ENDPOINT: PROCESAR VINCULACIÓN ---
 # La web llamará a esto cuando el usuario complete el Login con Discord
 async def handle_link_request(request):
@@ -120,10 +181,31 @@ async def handle_notification(request):
         pass
     return web.Response(status=200)
 
+# --- ENDPOINT: OBTENER ROLES ---
+async def handle_get_roles(request):
+    try:
+        guild = bot.get_guild(GUILD_ID)
+        if not guild:
+            return web.json_response([], status=503)
+
+        roles = []
+        for role in guild.roles:
+            if role.name != "@everyone" and not role.managed:
+                roles.append({'id': str(role.id), 'name': role.name})
+
+        # Ordenar alfabéticamente
+        roles.sort(key=lambda x: x['name'])
+
+        return web.json_response(roles)
+    except Exception as e:
+        print(f"Error fetching roles: {e}")
+        return web.json_response({'error': str(e)}, status=500)
+
 async def start_web_server():
     app = web.Application()
     app.router.add_post('/link_discord', handle_link_request) # Nueva ruta para vinculación
     app.router.add_post('/notify', handle_notification)
+    app.router.add_get('/roles', handle_get_roles)
     runner = web.AppRunner(app)
     await runner.setup()
     site = web.TCPSite(runner, '0.0.0.0', BOT_PORT)

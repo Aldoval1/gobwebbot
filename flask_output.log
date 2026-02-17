@@ -1,0 +1,19 @@
+🔄 Verificando estado de la Base de Datos...
+✅ Tablas verificadas.
+🚀 Creando Usuario Admin (000/000)...
+✅ Usuario Admin creado exitosamente.
+✨ Inicialización completada.
+ * Serving Flask app 'run.py'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [17/Feb/2026 14:30:46] "GET /api/bot_config HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:33:05] "GET /official/login HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:34:18] "GET /official/login HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:34:19] "[32mPOST /official/login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [17/Feb/2026 14:34:19] "GET /official/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:34:19] "GET /government/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:34:19] "GET /personalization HTTP/1.1" 200 -
+127.0.0.1 - - [17/Feb/2026 14:34:21] "[32mPOST /personalization HTTP/1.1[0m" 302 -
+127.0.0.1 - - [17/Feb/2026 14:34:21] "GET /personalization HTTP/1.1" 200 -

@@ -121,3 +121,17 @@ class UserPhotoForm(FlaskForm):
 class ChangePasswordForm(FlaskForm):
     new_password = PasswordField('Nueva Contraseña', validators=[DataRequired(), Length(min=3)])
     submit = SubmitField('Establecer Contraseña')
+
+# NUEVO: Formulario de Personalización del Bot
+class BotConfigForm(FlaskForm):
+    # Welcome
+    welcome_enabled = BooleanField('Habilitar Mensaje de Bienvenida')
+    welcome_message = TextAreaField('Mensaje', render_kw={"rows": 4})
+    welcome_banner_url = StringField('Imagen de Bienvenida (URL)')
+
+    # AutoRoles
+    autoroles_enabled = BooleanField('Habilitar Auto-Roles')
+    # choices se poblará dinámicamente en la vista
+    autoroles_ids = SelectMultipleField('Roles a Asignar', choices=[], validate_choice=False)
+
+    submit = SubmitField('Guardar Configuración')

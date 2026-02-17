@@ -131,4 +131,16 @@ class Appointment(db.Model):
     date = db.Column(db.DateTime)
     reason = db.Column(db.String(200))
     status = db.Column(db.String(20), default='Pending')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow) # AÑADIDO: Campo que faltaba
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class BotConfig(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Welcome
+    welcome_enabled = db.Column(db.Boolean, default=False)
+    welcome_message = db.Column(db.Text, nullable=True)
+    welcome_banner_url = db.Column(db.String(256), nullable=True) # The "Banner"
+
+    # AutoRoles
+    autoroles_enabled = db.Column(db.Boolean, default=False)
+    autoroles_ids = db.Column(db.Text, nullable=True) # Comma separated IDs

@@ -7,12 +7,12 @@ from app.forms import (
     LoginForm, RegistrationForm, OfficialLoginForm, OfficialRegistrationForm,
     SearchUserForm, CriminalRecordForm, TrafficFineForm, CommentForm,
     AppointmentForm, CreateLeaderForm, EditCitizenForm, EditCitizenPhotoForm,
-    BusinessLicenseForm, UserPhotoForm, ChangePasswordForm
+    BusinessLicenseForm, UserPhotoForm, ChangePasswordForm, BotConfigForm
 )
 from app.models import (
     User, Comment, TrafficFine, License, CriminalRecord,
     CriminalRecordSubjectPhoto, CriminalRecordEvidencePhoto,
-    Appointment, Business
+    Appointment, Business, BotConfig
 )
 from sqlalchemy import func
 from flask_login import current_user, login_user, logout_user, login_required
@@ -1040,3 +1040,72 @@ def change_citizen_password(user_id):
         flash('Error al cambiar contraseña.')
         
     return redirect(url_for('main.citizen_profile', user_id=user_id))
+
+# --- BOT CONFIG API ---
+
+@bp.route('/api/bot_config', methods=['GET'])
+def get_bot_config():
+    config = BotConfig.query.first()
+    if not config:
+        return jsonify({})
+
+    return jsonify({
+        'welcome_enabled': config.welcome_enabled,
+        'welcome_message': config.welcome_message,
+        'welcome_banner_url': config.welcome_banner_url,
+        'autoroles_enabled': config.autoroles_enabled,
+        'autoroles_ids': config.autoroles_ids
+    })
+
+# --- PERSONALIZATION PAGE ---
+
+@bp.route('/personalization', methods=['GET', 'POST'])
+@login_required
+def personalization():
+    # Only Government or high rank should access
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.official_dashboard'))
+
+    config = BotConfig.query.first()
+    if not config:
+        config = BotConfig()
+        db.session.add(config)
+        db.session.commit()
+
+    form = BotConfigForm(obj=config)
+
+    # Fetch Roles from Bot
+    roles = []
+    bot_url = os.environ.get('BOT_URL') or 'http://127.0.0.1:8080'
+    try:
+        resp = requests.get(f"{bot_url}/roles", timeout=2)
+        if resp.status_code == 200:
+            roles = resp.json()
+    except Exception as e:
+        print(f"Error fetching roles from bot: {e}")
+        # flash('No se pudo conectar con el bot para obtener roles.')
+
+    # Populate choices
+    form.autoroles_ids.choices = [(r['id'], r['name']) for r in roles]
+
+    if request.method == 'GET':
+        # Pre-select values (SelectMultipleField needs list)
+        if config.autoroles_ids:
+            form.autoroles_ids.data = config.autoroles_ids.split(',')
+
+    if form.validate_on_submit():
+        config.welcome_enabled = form.welcome_enabled.data
+        config.welcome_message = form.welcome_message.data
+        config.welcome_banner_url = form.welcome_banner_url.data
+        config.autoroles_enabled = form.autoroles_enabled.data
+
+        # Save roles as comma separated string
+        selected_roles = form.autoroles_ids.data
+        config.autoroles_ids = ",".join(selected_roles) if selected_roles else ""
+
+        db.session.commit()
+        flash('Configuración actualizada.')
+        return redirect(url_for('main.personalization'))
+
+    return render_template('personalization.html', form=form, roles=roles)
