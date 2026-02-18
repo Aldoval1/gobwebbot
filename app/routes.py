@@ -19,6 +19,9 @@ from flask_login import current_user, login_user, logout_user, login_required
 from flask import Blueprint
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
+from docx import Document
+import io
+from flask import send_file
 
 bp = Blueprint('main', __name__)
 
@@ -441,7 +444,7 @@ def download_criminal_record():
 
 @bp.route('/official/plantillas/generate_sabes', methods=['POST'])
 @login_required
-def generate_sabes_pdf():
+def generate_sabes_report():
     # Only allow officials
     if not current_user.badge_id:
         return redirect(url_for('main.index'))
@@ -451,43 +454,50 @@ def generate_sabes_pdf():
     fecha = request.form.get('fecha')
     detalles = request.form.get('detalles')
 
-    # Create PDF using FPDF
-    pdf = FPDF()
-    pdf.add_page()
+    # Load the specific DOCX template from the app folder
+    template_path = os.path.join(current_app.root_path, 'REPSABES.docx')
+    if not os.path.exists(template_path):
+        flash('Error: Plantilla REPSABES.docx no encontrada en el servidor.')
+        return redirect(url_for('main.official_dashboard'))
 
-    # Header
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(200, 10, txt="REPORTE SABES", ln=True, align='C')
-    pdf.ln(10)
+    doc = Document(template_path)
 
-    # Content
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(40, 10, txt="Agente:", align='L')
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 10, txt=nombre_agente, ln=True, align='L')
+    # Dictionary of replacements
+    replacements = {
+        '{nombre_agente}': nombre_agente,
+        '{fecha}': fecha,
+        '{detalles}': detalles
+    }
 
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(40, 10, txt="Fecha:", align='L')
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(0, 10, txt=fecha, ln=True, align='L')
+    # Helper function to replace text in paragraphs
+    def replace_text(paragraph):
+        for key, value in replacements.items():
+            if key in paragraph.text:
+                # Naive replacement (might break style if run across runs, but usually fine for simple placeholders)
+                paragraph.text = paragraph.text.replace(key, value)
 
-    pdf.ln(5)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(0, 10, txt="Detalles del Reporte:", ln=True, align='L')
-    pdf.set_font("Arial", '', 12)
-    pdf.multi_cell(0, 6, txt=detalles)
+    # 1. Replace in body paragraphs
+    for paragraph in doc.paragraphs:
+        replace_text(paragraph)
 
-    # Footer area (Signature placeholder)
-    pdf.ln(30)
-    pdf.cell(0, 10, txt="__________________________", ln=True, align='R')
-    pdf.cell(0, 10, txt="Firma del Agente", ln=True, align='R')
+    # 2. Replace in tables
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    replace_text(paragraph)
 
-    # Output
-    pdf_bytes = pdf.output()
-    response = make_response(bytes(pdf_bytes))
-    response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = f'attachment; filename=Reporte_SABES_{fecha}.pdf'
-    return response
+    # Save to memory
+    file_stream = io.BytesIO()
+    doc.save(file_stream)
+    file_stream.seek(0)
+
+    return send_file(
+        file_stream,
+        as_attachment=True,
+        download_name=f'Reporte_SABES_{fecha}.docx',
+        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    )
 
 @bp.route('/licenses', methods=['GET', 'POST'])
 @login_required
