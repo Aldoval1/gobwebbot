@@ -130,6 +130,7 @@
         <div class="logout">
             <div style="display: inline-block; margin-right: 15px;">
                 <form action="{{ url_for('main.official_toggle_duty') }}" method="POST" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     {% if current_user.on_duty %}
                         <button type="submit" class="btn" style="background-color: #e74c3c; color: white; padding: 8px 15px; font-weight: bold;">
                             🔴 SALIR DE SERVICIO
@@ -202,9 +203,11 @@
                     </td>
                     <td>
                         <form action="{{ url_for('main.official_action', user_id=user.id, action='approve') }}" method="post" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-accept">Aceptar</button>
                         </form>
                         <form action="{{ url_for('main.official_action', user_id=user.id, action='deny') }}" method="post" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-deny">Denegar</button>
                         </form>
                     </td>
@@ -223,7 +226,7 @@
             <span class="close">&times;</span>
             <h2>Generar Reporte SABES</h2>
             <form action="{{ url_for('main.generate_sabes_report') }}" method="POST" enctype="multipart/form-data">
-                <!-- CSRF Token would be needed here if using Flask-WTF properly, but manual form for now -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
 
                 <div class="form-group">
                     <label for="nombre_agente">Nombre del Agente:</label>

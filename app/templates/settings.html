@@ -18,6 +18,7 @@
                 <h6 class="mb-4 text-muted">Preferencias de Comunicación</h6>
 
                 <form action="{{ url_for('main.settings_notifications') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="form-check form-switch mb-4">
                         <input class="form-check-input" type="checkbox" id="notifSwitch" name="receive_notifications" {% if current_user.receive_notifications %}checked{% endif %}>
                         <label class="form-check-label fw-bold" for="notifSwitch">Recibir Alertas de Servicio (Discord)</label>

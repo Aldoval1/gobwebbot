@@ -23,6 +23,7 @@
         </div>
         <div class="card-body bg-white">
             <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <p class="text-muted">Selecciona los servidores a los que deseas unirte automáticamente. El bot te asignará tu nombre y roles.</p>
 
                 <div class="server-option">

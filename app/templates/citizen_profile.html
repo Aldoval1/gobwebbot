@@ -183,12 +183,14 @@
                         </button>
                         
                         <form action="{{ url_for('main.unlink_discord', user_id=citizen.id) }}" method="POST" onsubmit="return confirm('¿Seguro que quieres desvincular el Discord?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-outline-dark w-100">
                                 🔌 Desvincular Discord
                             </button>
                         </form>
 
                         <form action="{{ url_for('main.clear_criminal_records', user_id=citizen.id) }}" method="POST" onsubmit="return confirm('¿ESTÁS SEGURO? Esto borrará TODOS los antecedentes penales de este usuario permanentemente.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-dark w-100 fw-bold">
                                 🗑️ BORRAR ANTECEDENTES
                             </button>
@@ -200,6 +202,7 @@
                         </button>
 
                         <form action="{{ url_for('main.delete_citizen_account', user_id=citizen.id) }}" method="POST" onsubmit="return confirm('⚠️ PELIGRO: ¿Estás seguro de ELIMINAR COMPLETAMENTE a este usuario? Esta acción es IRREVERSIBLE.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-outline-danger w-100 fw-bold mt-2" style="border: 2px solid red;">
                                 💀 ELIMINAR USUARIO
                             </button>

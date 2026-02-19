@@ -783,19 +783,14 @@ def official_register():
         photo_path = os.path.join(current_app.config['UPLOAD_FOLDER'], photo_filename)
         photo_file.save(photo_path)
 
-        user = User(
-            first_name=form.first_name.data,
-            last_name=form.last_name.data,
-            dni=form.dni.data,
-            badge_id=form.badge_id.data,
-            department=form.department.data,
-            selfie_filename=photo_filename,
-            official_status='Pendiente',
-            official_rank='Miembro'
-        )
-        user.set_password(form.password.data)
+        citizen.badge_id = form.badge_id.data
+        citizen.department = form.department.data
+        citizen.selfie_filename = photo_filename
+        citizen.official_status = 'Pendiente'
+        citizen.official_rank = 'Miembro'
 
-        db.session.add(user)
+        # citizen.set_password(form.password.data) # Password verified above
+
         db.session.commit()
 
         flash('Solicitud enviada. Espera a que un líder apruebe tu cuenta.')
@@ -975,7 +970,6 @@ def official_database():
     if form.query.data:
         query = form.query.data
         users = User.query.filter(
-            (User.badge_id == None) &
             (
                 User.first_name.contains(query) |
                 User.last_name.contains(query) |
@@ -1075,7 +1069,8 @@ def safinder_upload():
         return redirect(url_for('main.safinder'))
 
     if file and file.filename.lower().endswith('.pdf'):
-        filename = secure_filename(file.filename)
+        import uuid
+        filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
         docs_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'docs')
 
         if not os.path.exists(docs_folder):
@@ -1298,6 +1293,7 @@ def delete_citizen_account(user_id):
     TrafficFine.query.filter_by(author_id=user.id).update({TrafficFine.author_id: None})
     CriminalRecord.query.filter_by(author_id=user.id).update({CriminalRecord.author_id: None})
     Comment.query.filter_by(author_id=user.id).update({Comment.author_id: None})
+    DocModel.query.filter_by(uploader_id=user.id).update({DocModel.uploader_id: None})
 
     # 2. Delete user (Cascade will handle owned records)
     db.session.delete(user)

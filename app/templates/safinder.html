@@ -75,13 +75,20 @@
                             <h5 class="text-primary">{{ doc.title }}</h5>
                             <small class="text-muted">{{ doc.created_at.strftime('%d/%m/%Y') }}</small>
                         </div>
-                        <p class="text-muted small mb-2">Subido por: {{ doc.uploader.first_name }} {{ doc.uploader.last_name }} ({{ doc.uploader.department }})</p>
+                        <p class="text-muted small mb-2">
+                            Subido por:
+                            {% if doc.uploader %}
+                                {{ doc.uploader.first_name }} {{ doc.uploader.last_name }} ({{ doc.uploader.department }})
+                            {% else %}
+                                Usuario Eliminado
+                            {% endif %}
+                        </p>
 
                         <div class="bg-light p-2 rounded mb-2 text-secondary small" style="max-height: 100px; overflow: hidden; text-overflow: ellipsis;">
                             {{ doc.text_content[:300] }}...
                         </div>
 
-                        <a href="{{ url_for('static', filename='docs/' + doc.filename) }}" target="_blank" class="btn btn-sm btn-outline-primary">📄 Ver PDF Original</a>
+                        <a href="{{ url_for('static', filename='img/docs/' + doc.filename) }}" target="_blank" class="btn btn-sm btn-outline-primary">📄 Ver PDF Original</a>
                     </div>
                     {% endfor %}
                 {% elif request.args.get('q') %}
@@ -97,7 +104,7 @@
                     </div>
                     <div class="card-body">
                         <form action="{{ url_for('main.safinder_upload') }}" method="POST" enctype="multipart/form-data">
-                            <!-- CSRF would be here if using WTForms, doing raw html for speed/simplicity as existing forms -->
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <div class="mb-3">
                                 <label class="form-label">Título del Documento</label>
                                 <input type="text" name="title" class="form-control" required>
@@ -119,7 +126,7 @@
                         {% for doc in recent_docs %}
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <span class="text-truncate" style="max-width: 200px;">{{ doc.title }}</span>
-                            <a href="{{ url_for('static', filename='docs/' + doc.filename) }}" target="_blank" class="badge bg-secondary text-decoration-none">PDF</a>
+                            <a href="{{ url_for('static', filename='img/docs/' + doc.filename) }}" target="_blank" class="badge bg-secondary text-decoration-none">PDF</a>
                         </li>
                         {% endfor %}
                     </ul>
