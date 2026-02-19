@@ -23,3 +23,13 @@ class Config:
     # Configuración del Bot (URL interna para comunicación)
     # En local suele ser http://127.0.0.1:8080
     BOT_URL = os.environ.get('BOT_URL') or 'http://127.0.0.1:8080'
+
+    # Discord Guilds & Roles
+    DISCORD_BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
+
+    GOBIERNO_GUILD_ID = os.environ.get('GOBIERNO_GUILD_ID') or os.environ.get('GUILD_ID') # Fallback to existing
+    JUDICIAL_GUILD_ID = os.environ.get('JUDICIAL_GUILD_ID')
+    CONGRESO_GUILD_ID = os.environ.get('CONGRESO_GUILD_ID')
+
+    JUDICIAL_ROLE_ID = os.environ.get('JUDICIAL_ROLE_ID') or '1473865577993994260'
+    CONGRESO_ROLE_ID = os.environ.get('CONGRESO_ROLE_ID') or '1473835075375337740'

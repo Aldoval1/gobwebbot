@@ -132,3 +132,16 @@ class Appointment(db.Model):
     reason = db.Column(db.String(200))
     status = db.Column(db.String(20), default='Pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow) # AÑADIDO: Campo que faltaba
+
+class Document(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), index=True)
+    filename = db.Column(db.String(200))
+    text_content = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploader_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    uploader = db.relationship('User', backref=db.backref('uploaded_documents', lazy=True))
+
+    def __repr__(self):
+        return f'<Document {self.title}>'

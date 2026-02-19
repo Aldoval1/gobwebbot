@@ -1,7 +1,7 @@
 import os
 import requests
 from datetime import datetime, timedelta
-from flask import render_template, flash, redirect, url_for, request, current_app, jsonify, make_response
+from flask import render_template, flash, redirect, url_for, request, current_app, jsonify, make_response, session
 from app import db
 from app.forms import (
     LoginForm, RegistrationForm, OfficialLoginForm, OfficialRegistrationForm,
@@ -12,7 +12,7 @@ from app.forms import (
 from app.models import (
     User, Comment, TrafficFine, License, CriminalRecord,
     CriminalRecordSubjectPhoto, CriminalRecordEvidencePhoto,
-    Appointment, Business
+    Appointment, Business, Document as DocModel
 )
 from sqlalchemy import func
 from flask_login import current_user, login_user, logout_user, login_required
@@ -20,6 +20,7 @@ from flask import Blueprint
 from werkzeug.utils import secure_filename
 from fpdf import FPDF
 from docx import Document
+from pypdf import PdfReader
 import io
 from flask import send_file
 
@@ -138,7 +139,8 @@ def discord_login():
         flash('Error: Faltan credenciales de Discord en la configuración (.env).')
         return redirect(url_for('main.citizen_dashboard'))
     
-    oauth_url = f"https://discord.com/oauth2/authorize?client_id={DISCORD_CLIENT_ID}&redirect_uri={DISCORD_REDIRECT_URI}&response_type=code&scope=identify"
+    # Updated scope to include guilds.join
+    oauth_url = f"https://discord.com/oauth2/authorize?client_id={DISCORD_CLIENT_ID}&redirect_uri={DISCORD_REDIRECT_URI}&response_type=code&scope=identify%20guilds.join"
     return redirect(oauth_url)
 
 @bp.route('/callback')
@@ -173,27 +175,83 @@ def discord_callback():
         current_user.discord_id = discord_id
         db.session.commit()
 
-        bot_url = os.environ.get('BOT_URL')
-        if bot_url:
-            try:
-                payload = {
-                    'discord_id': discord_id,
-                    'first_name': current_user.first_name,
-                    'last_name': current_user.last_name
-                }
-                requests.post(f"{bot_url}/link_discord", json=payload, timeout=5)
-                flash('¡Vinculación exitosa! Revisa tu Discord, el bot te ha dado tus roles.')
-            except Exception as e:
-                print(f"Error contactando al bot: {e}")
-                flash('Vinculado en web, pero el bot no pudo responder (¿Está apagado?).')
-        else:
-            flash('Vinculado en web correctamente.')
+        # Save access token for guild join step
+        session['discord_access_token'] = access_token
+
+        return redirect(url_for('main.discord_select_servers'))
 
     except requests.exceptions.RequestException as e:
         print(f"Error OAuth Discord: {e}")
         flash('Hubo un error al conectar con Discord. Inténtalo de nuevo.')
+        return redirect(url_for('main.citizen_dashboard'))
 
-    return redirect(url_for('main.citizen_dashboard'))
+@bp.route('/discord/select_servers', methods=['GET', 'POST'])
+@login_required
+def discord_select_servers():
+    access_token = session.get('discord_access_token')
+    if not access_token:
+        # If no token, maybe they already linked before? Just show dashboard
+        flash('Sesión de Discord expirada o ya finalizada.')
+        return redirect(url_for('main.citizen_dashboard'))
+
+    if request.method == 'POST':
+        selected_guilds = request.form.getlist('guilds')
+
+        # Logic to join guilds
+        bot_token = current_app.config.get('DISCORD_BOT_TOKEN')
+
+        guild_map = {
+            'gobierno': current_app.config.get('GOBIERNO_GUILD_ID'),
+            'judicial': current_app.config.get('JUDICIAL_GUILD_ID'),
+            'congreso': current_app.config.get('CONGRESO_GUILD_ID')
+        }
+
+        # Always try to join Gobierno (mandatory)
+        if 'gobierno' not in selected_guilds:
+            selected_guilds.append('gobierno')
+
+        success_count = 0
+
+        for key in selected_guilds:
+            guild_id = guild_map.get(key)
+            if guild_id and bot_token:
+                # Add User to Guild using Bot Token + User Access Token
+                url = f"https://discord.com/api/v10/guilds/{guild_id}/members/{current_user.discord_id}"
+                headers = {
+                    "Authorization": f"Bot {bot_token}",
+                    "Content-Type": "application/json"
+                }
+                payload = {"access_token": access_token}
+
+                try:
+                    resp = requests.put(url, headers=headers, json=payload, timeout=5)
+                    # 201: Joined, 204: Already joined
+                    if resp.status_code in [201, 204]:
+                        success_count += 1
+                    else:
+                        print(f"Failed to join guild {key} ({guild_id}): {resp.status_code} {resp.text}")
+                except Exception as e:
+                    print(f"Error contacting Discord API: {e}")
+
+        # Trigger Bot for Roles & Nicknames
+        bot_url = os.environ.get('BOT_URL')
+        if bot_url:
+            try:
+                payload = {
+                    'discord_id': current_user.discord_id,
+                    'first_name': current_user.first_name,
+                    'last_name': current_user.last_name,
+                    'guilds': selected_guilds
+                }
+                requests.post(f"{bot_url}/setup_account", json=payload, timeout=5)
+            except Exception as e:
+                print(f"Bot setup error: {e}")
+
+        flash(f'¡Configuración completada! Te has unido a los servidores seleccionados.')
+        session.pop('discord_access_token', None)
+        return redirect(url_for('main.citizen_dashboard'))
+
+    return render_template('select_servers.html')
 
 # --- MAIN ROUTES ---
 
@@ -975,6 +1033,82 @@ def add_comment(user_id):
 
     return redirect(url_for('main.citizen_profile', user_id=user_id))
 
+
+# --- SA FINDER ROUTES ---
+
+@bp.route('/official/safinder', methods=['GET'])
+@login_required
+def safinder():
+    if not current_user.badge_id:
+        flash('Acceso denegado.')
+        return redirect(url_for('main.citizen_dashboard'))
+
+    query = request.args.get('q', '')
+    results = []
+
+    if query:
+        search = f"%{query}%"
+        results = DocModel.query.filter(
+            (DocModel.title.ilike(search)) |
+            (DocModel.text_content.ilike(search))
+        ).order_by(DocModel.created_at.desc()).all()
+
+    recent_docs = DocModel.query.order_by(DocModel.created_at.desc()).limit(5).all()
+
+    return render_template('safinder.html', results=results, recent_docs=recent_docs)
+
+@bp.route('/official/safinder/upload', methods=['POST'])
+@login_required
+def safinder_upload():
+    if not current_user.badge_id:
+        return redirect(url_for('main.citizen_dashboard'))
+
+    if 'file' not in request.files:
+        flash('No se seleccionó archivo.')
+        return redirect(url_for('main.safinder'))
+
+    file = request.files['file']
+    title = request.form.get('title')
+
+    if file.filename == '':
+        flash('Nombre de archivo inválido.')
+        return redirect(url_for('main.safinder'))
+
+    if file and file.filename.lower().endswith('.pdf'):
+        filename = secure_filename(file.filename)
+        docs_folder = os.path.join(current_app.config['UPLOAD_FOLDER'], 'docs')
+
+        if not os.path.exists(docs_folder):
+            os.makedirs(docs_folder)
+
+        file_path = os.path.join(docs_folder, filename)
+        file.save(file_path)
+
+        # Extract Text
+        try:
+            reader = PdfReader(file_path)
+            text = ""
+            for page in reader.pages:
+                text += page.extract_text() + "\n"
+        except Exception as e:
+            print(f"Error parsing PDF: {e}")
+            text = "Error leyendo contenido."
+
+        new_doc = DocModel(
+            title=title,
+            filename=filename,
+            text_content=text,
+            uploader_id=current_user.id
+        )
+        db.session.add(new_doc)
+        db.session.commit()
+
+        flash('Documento subido e indexado correctamente.')
+    else:
+        flash('Solo se permiten archivos PDF.')
+
+    return redirect(url_for('main.safinder'))
+
 @bp.route('/official/citizen/<int:user_id>/add_traffic_fine', methods=['POST'])
 @login_required
 def add_traffic_fine(user_id):
@@ -1150,3 +1284,24 @@ def change_citizen_password(user_id):
         flash('Error al cambiar contraseña.')
         
     return redirect(url_for('main.citizen_profile', user_id=user_id))
+
+@bp.route('/official/citizen/<int:user_id>/delete_account', methods=['POST'])
+@login_required
+def delete_citizen_account(user_id):
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.citizen_profile', user_id=user_id))
+
+    user = User.query.get_or_404(user_id)
+
+    # 1. Nullify author_id in related records to avoid deletion or integrity errors
+    TrafficFine.query.filter_by(author_id=user.id).update({TrafficFine.author_id: None})
+    CriminalRecord.query.filter_by(author_id=user.id).update({CriminalRecord.author_id: None})
+    Comment.query.filter_by(author_id=user.id).update({Comment.author_id: None})
+
+    # 2. Delete user (Cascade will handle owned records)
+    db.session.delete(user)
+    db.session.commit()
+
+    flash(f'Usuario {user.first_name} {user.last_name} eliminado permanentemente.')
+    return redirect(url_for('main.official_dashboard'))
