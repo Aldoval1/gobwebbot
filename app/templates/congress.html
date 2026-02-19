@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Congreso - Gobierno de San Andreas</title>
+    <!-- FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* --- ESTILOS GENERALES (Copiados de citizen_dashboard) --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+            background-color: #f4f6f9 !important;
+            background-image: none !important;
+            color: #333 !important;
+            margin: 0 !important;
+            display: block !important;
+            height: auto !important;
+            min-height: 100vh;
+            overflow-y: auto !important;
+        }
+
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            width: 100%;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 10;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .header-logo {
+            height: 65px;
+            width: auto;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+        .header-title h1 {
+            margin: 0;
+            font-size: 1.6em;
+            font-weight: 700;
+            line-height: 1.2;
+            color: #ffffff !important;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .header-title small {
+            color: #ecf0f1;
+            font-size: 0.9em;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .logout-btn {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 25px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: background-color 0.2s, transform 0.2s;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(216, 216, 216, 0.2);
+        }
+        .logout-btn:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .back-btn {
+            background-color: #95a5a6;
+            margin-right: 10px;
+        }
+        .back-btn:hover {
+            background-color: #7f8c8d;
+        }
+
+        /* CONTENEDOR PRINCIPAL */
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 30px;
+        }
+
+        /* --- ESTILOS ESPECIFICOS CONGRESO --- */
+        .congress-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            margin-top: 20px;
+        }
+
+        .chart-section {
+            flex: 2;
+            min-width: 300px;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .details-section {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            height: fit-content;
+        }
+
+        /* HEMICYCLE CHART */
+        #hemicycle-chart {
+            width: 100%;
+            max-width: 600px;
+            height: 300px; /* Half height for semicircle */
+            position: relative;
+            margin: 20px auto;
+            border-bottom: 2px solid #eee;
+        }
+
+        .seat-dot {
+            position: absolute;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid white;
+            transform: translate(-50%, -50%); /* Centering on the point */
+        }
+
+        .seat-dot:hover {
+            transform: translate(-50%, -50%) scale(1.3);
+            z-index: 10;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .seat-dot.selected {
+            transform: translate(-50%, -50%) scale(1.3);
+            border: 3px solid #333;
+            z-index: 10;
+        }
+
+        .seat-dot.dimmed {
+            opacity: 0.2;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+
+        /* SIZES */
+        .vote-1 { width: 30px; height: 30px; }
+        .vote-2 { width: 45px; height: 45px; } /* Bigger for 2 votes */
+
+        /* COLORS per DISTRICT */
+        .d1 { background-color: #e74c3c; } /* Red */
+        .d2 { background-color: #3498db; } /* Blue */
+        .d3 { background-color: #2ecc71; } /* Green */
+        .d4 { background-color: #f1c40f; } /* Yellow */
+        .d5 { background-color: #9b59b6; } /* Purple */
+        .d6 { background-color: #e67e22; } /* Orange */
+
+        /* FILTER */
+        .filter-container {
+            margin-bottom: 20px;
+        }
+        .filter-select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 1em;
+            color: #333;
+        }
+
+        /* DETAILS CARD */
+        .member-card {
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s;
+            display: none;
+        }
+        .member-card.active {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+
+        .member-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #f0f2f5;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        .member-name {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .member-meta {
+            color: #7f8c8d;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: inline-block;
+            background: #f8f9fa;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        .member-bio {
+            color: #555;
+            line-height: 1.6;
+            text-align: left;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Gobierno" class="header-logo" onerror="this.style.display='none'">
+            <div class="header-title">
+                <h1>Congreso de San Andreas</h1>
+                <small>Cámara de Representantes</small>
+            </div>
+        </div>
+        <div>
+            <a href="{{ url_for('main.citizen_dashboard') }}" class="logout-btn back-btn">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+            <span style="font-weight: 500; font-size: 1.1em; margin-right: 15px;">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+            <a href="{{ url_for('main.logout') }}" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </a>
+        </div>
+    </div>
+
+    <!-- CONTENIDO -->
+    <div class="container">
+
+        <div class="congress-layout">
+
+            <!-- SECCIÓN IZQUIERDA: GRÁFICO -->
+            <div class="chart-section">
+                <h2 style="color: #2c3e50; margin-bottom: 30px;">Hemiciclo</h2>
+
+                <div id="hemicycle-chart">
+                    <!-- Los puntos se generarán con JS -->
+                </div>
+
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-dot d1"></div> Distrito 1</div>
+                    <div class="legend-item"><div class="legend-dot d2"></div> Distrito 2</div>
+                    <div class="legend-item"><div class="legend-dot d3"></div> Distrito 3</div>
+                    <div class="legend-item"><div class="legend-dot d4"></div> Distrito 4</div>
+                    <div class="legend-item"><div class="legend-dot d5"></div> Distrito 5</div>
+                    <div class="legend-item"><div class="legend-dot d6"></div> Distrito 6</div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN DERECHA: DETALLES Y FILTRO -->
+            <div class="details-section">
+
+                <div class="filter-container">
+                    <label for="district-filter" style="display: block; margin-bottom: 8px; font-weight: 600; color: #555;">Filtrar por Distrito:</label>
+                    <select id="district-filter" class="filter-select">
+                        <option value="all">Todos los Distritos</option>
+                        <option value="1">Distrito 1</option>
+                        <option value="2">Distrito 2</option>
+                        <option value="3">Distrito 3</option>
+                        <option value="4">Distrito 4</option>
+                        <option value="5">Distrito 5</option>
+                        <option value="6">Distrito 6</option>
+                    </select>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+
+                <div id="placeholder-msg" style="text-align: center; color: #999; margin-top: 50px;">
+                    <i class="fas fa-mouse-pointer" style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;"></i>
+                    <p>Haz clic en un congresista para ver su información.</p>
+                </div>
+
+                <div id="member-details" class="member-card">
+                    <img src="" alt="Foto" id="detail-photo" class="member-photo">
+                    <div id="detail-name" class="member-name">Nombre</div>
+                    <div id="detail-meta" class="member-meta">Distrito X • Y Votos</div>
+                    <div id="detail-bio" class="member-bio">Biografía...</div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const members = {{ members | tojson }};
+        const chartContainer = document.getElementById('hemicycle-chart');
+        const detailCard = document.getElementById('member-details');
+        const placeholder = document.getElementById('placeholder-msg');
+        const districtFilter = document.getElementById('district-filter');
+
+        // Renderizar Hemiciclo
+        function renderChart() {
+            // Ordenar por distrito para agrupar colores visualmente (opcional, pero se ve mejor)
+            // O mantener el orden dado. Vamos a mantener el orden dado pero distribuir en arco.
+
+            const totalMembers = members.length;
+            const radiusX = chartContainer.offsetWidth / 2 - 40; // Radio horizontal
+            const radiusY = chartContainer.offsetHeight - 40; // Radio vertical
+            const centerX = chartContainer.offsetWidth / 2;
+            const bottomY = chartContainer.offsetHeight - 20;
+
+            members.forEach((member, index) => {
+                const dot = document.createElement('div');
+                dot.className = `seat-dot d${member.district} vote-${member.votes}`;
+                dot.dataset.district = member.district;
+
+                // Calcular posición en el arco (180 grados / N+1 espacios)
+                // Math.PI es 180 grados (izquierda). 0 es derecha. -Math.PI/2 es arriba.
+                // Queremos de izquierda (PI) a derecha (0).
+
+                // Paso angular
+                const step = Math.PI / (totalMembers + 1);
+                const angle = Math.PI - (step * (index + 1));
+
+                // Posición Polar a Cartesiana
+                // x = r * cos(theta)
+                // y = r * sin(theta) (Ojo: en CSS top aumenta hacia abajo, así que invertimos Y)
+
+                const left = centerX + (radiusX * Math.cos(angle));
+                const top = bottomY - (radiusY * Math.sin(angle));
+
+                dot.style.left = `${left}px`;
+                dot.style.top = `${top}px`;
+
+                // Tooltip simple
+                dot.title = `${member.name} (D${member.district})`;
+
+                // Click Event
+                dot.addEventListener('click', () => {
+                    showDetails(member);
+
+                    // Highlight selected dot
+                    document.querySelectorAll('.seat-dot').forEach(d => d.classList.remove('selected'));
+                    dot.classList.add('selected');
+                });
+
+                chartContainer.appendChild(dot);
+            });
+        }
+
+        function showDetails(member) {
+            placeholder.style.display = 'none';
+
+            document.getElementById('detail-photo').src = member.photo;
+            document.getElementById('detail-name').innerText = member.name;
+            document.getElementById('detail-meta').innerText = `Distrito ${member.district} • ${member.votes} Voto${member.votes > 1 ? 's' : ''}`;
+            document.getElementById('detail-bio').innerText = member.bio;
+
+            detailCard.classList.add('active');
+        }
+
+        // Filtro
+        districtFilter.addEventListener('change', (e) => {
+            const selectedDistrict = e.target.value;
+            const dots = document.querySelectorAll('.seat-dot');
+
+            dots.forEach(dot => {
+                if (selectedDistrict === 'all') {
+                    dot.classList.remove('dimmed');
+                } else {
+                    if (dot.dataset.district === selectedDistrict) {
+                        dot.classList.remove('dimmed');
+                    } else {
+                        dot.classList.add('dimmed');
+                    }
+                }
+            });
+        });
+
+        // Init
+        window.addEventListener('resize', () => {
+            chartContainer.innerHTML = '';
+            renderChart();
+        });
+
+        // Timeout para asegurar que el CSS cargó y el div tiene tamaño
+        setTimeout(renderChart, 100);
+
+    </script>
+</body>
+</html>
