@@ -442,6 +442,12 @@ def download_criminal_record():
 
 # --- PLANTILLAS ROUTES ---
 
+@bp.route('/judicial')
+@login_required
+def judicial():
+    if current_user.badge_id:
+        return redirect(url_for('main.official_dashboard'))
+    return render_template('judicial.html')
 
 @bp.route('/licenses', methods=['GET', 'POST'])
 @login_required
