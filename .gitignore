@@ -4,3 +4,5 @@ pycache/
 .env
 instance/
 .DS_Store
+hermes_local.db
+*.log
