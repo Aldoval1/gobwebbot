@@ -121,18 +121,18 @@
             font-size: 12px;
         }
         .official-link a {
-            color: #95a5a6;
+            color: #7f8c8d;
             text-decoration: none;
         }
          .official-link a:hover {
-            color: #7f8c8d;
+            color: #5d6d7e;
         }
 
     </style>
 </head>
 <body>
     <div class="login-container">
-        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="San Andreas Government" class="logo-img">
+        <img src="{{ url_for('static', filename='img/logo.png') }}" alt="San Andreas Government" class="logo-img" aria-label="Logo del Gobierno de San Andreas">
 
         <div class="login-content">
             <h1>Gobierno de San Andreas</h1>
@@ -142,13 +142,15 @@
                 <a href="{{ url_for('main.logout') }}"><button style="background-color: #dc3545;">Cerrar Sesión</button></a>
                  <a href="{{ url_for('main.citizen_dashboard') }}" style="display:block; margin-top:10px; text-decoration:none; color:#007bff;">Ir al Dashboard</a>
             {% else %}
-                <form method="POST" action="{{ url_for('main.login') }}">
+                <form method="POST" action="{{ url_for('main.login') }}" id="loginForm">
                     {{ form.hidden_tag() }}
-                    <div>
-                        {{ form.dni(placeholder="DNI") }}
+                    <div style="text-align: left;">
+                        <label for="dni" style="font-size: 14px; color: #34495e; font-weight: 500; margin-left: 2px;">DNI</label>
+                        {{ form.dni(placeholder="Introduce tu DNI", id="dni", aria_label="DNI") }}
                     </div>
-                    <div>
-                        {{ form.password(placeholder="Contraseña") }}
+                    <div style="text-align: left; margin-top: 15px;">
+                        <label for="password" style="font-size: 14px; color: #34495e; font-weight: 500; margin-left: 2px;">Contraseña</label>
+                        {{ form.password(placeholder="Introduce tu contraseña", id="password", aria_label="Contraseña") }}
                     </div>
                     <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
                         {{ form.remember_me() }} {{ form.remember_me.label }}
@@ -176,5 +178,16 @@
         </div>
     </div>
 
+    <script>
+        document.getElementById('loginForm')?.addEventListener('submit', function(e) {
+            var btn = this.querySelector('button[type="submit"]');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = 'Iniciando...';
+                btn.style.opacity = '0.7';
+                btn.style.cursor = 'wait';
+            }
+        });
+    </script>
 </body>
 </html>
