@@ -453,51 +453,67 @@ def generate_sabes_report():
     nombre_agente = request.form.get('nombre_agente')
     fecha = request.form.get('fecha')
     detalles = request.form.get('detalles')
+    photo = request.files.get('evidence_photo')
 
-    # Load the specific DOCX template from the app folder
-    template_path = os.path.join(current_app.root_path, 'REPSABES.docx')
-    if not os.path.exists(template_path):
-        flash('Error: Plantilla REPSABES.docx no encontrada en el servidor.')
-        return redirect(url_for('main.official_dashboard'))
+    # Create PDF using FPDF
+    pdf = FPDF()
+    pdf.add_page()
 
-    doc = Document(template_path)
+    # Header
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(200, 10, txt="REPORTE SABES", ln=True, align='C')
+    pdf.ln(10)
 
-    # Dictionary of replacements
-    replacements = {
-        '{nombre_agente}': nombre_agente,
-        '{fecha}': fecha,
-        '{detalles}': detalles
-    }
+    # Content
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(40, 10, txt="Agente:", align='L')
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, txt=nombre_agente, ln=True, align='L')
 
-    # Helper function to replace text in paragraphs
-    def replace_text(paragraph):
-        for key, value in replacements.items():
-            if key in paragraph.text:
-                # Naive replacement (might break style if run across runs, but usually fine for simple placeholders)
-                paragraph.text = paragraph.text.replace(key, value)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(40, 10, txt="Fecha:", align='L')
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, txt=fecha, ln=True, align='L')
 
-    # 1. Replace in body paragraphs
-    for paragraph in doc.paragraphs:
-        replace_text(paragraph)
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, txt="Detalles del Reporte:", ln=True, align='L')
+    pdf.set_font("Arial", '', 12)
+    pdf.multi_cell(0, 6, txt=detalles)
 
-    # 2. Replace in tables
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                for paragraph in cell.paragraphs:
-                    replace_text(paragraph)
+    # Image Handling
+    if photo and photo.filename:
+        filename = secure_filename(photo.filename)
+        # Save temp
+        if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
+            os.makedirs(current_app.config['UPLOAD_FOLDER'])
 
-    # Save to memory
-    file_stream = io.BytesIO()
-    doc.save(file_stream)
-    file_stream.seek(0)
+        temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        photo.save(temp_path)
 
-    return send_file(
-        file_stream,
-        as_attachment=True,
-        download_name=f'Reporte_SABES_{fecha}.docx',
-        mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    )
+        pdf.ln(10)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, txt="Evidencia Fotográfica:", ln=True, align='L')
+
+        # Add Image (Width=100)
+        try:
+            pdf.image(temp_path, x=10, w=100)
+        except Exception as e:
+            pdf.cell(0, 10, txt=f"[Error al adjuntar imagen: {str(e)}]", ln=True)
+
+        # Clean up is optional but good practice. For now we keep it in uploads as record.
+
+    # Footer area (Signature placeholder)
+    pdf.ln(30)
+    pdf.cell(0, 10, txt="__________________________", ln=True, align='R')
+    pdf.cell(0, 10, txt="Firma del Agente", ln=True, align='R')
+
+    # Output
+    pdf_bytes = pdf.output()
+    response = make_response(bytes(pdf_bytes))
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=Reporte_SABES_{fecha}.pdf'
+    return response
 
 @bp.route('/licenses', methods=['GET', 'POST'])
 @login_required

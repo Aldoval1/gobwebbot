@@ -222,7 +222,7 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>Generar Reporte SABES</h2>
-            <form action="{{ url_for('main.generate_sabes_report') }}" method="POST">
+            <form action="{{ url_for('main.generate_sabes_report') }}" method="POST" enctype="multipart/form-data">
                 <!-- CSRF Token would be needed here if using Flask-WTF properly, but manual form for now -->
 
                 <div class="form-group">
@@ -240,7 +240,12 @@
                     <textarea id="detalles" name="detalles" rows="4" required></textarea>
                 </div>
 
-                <button type="submit" class="btn" style="background-color: #27ae60; color: white; width: 100%;">Descargar Reporte (DOCX)</button>
+                <div class="form-group">
+                    <label for="evidence_photo">Evidencia (Foto):</label>
+                    <input type="file" id="evidence_photo" name="evidence_photo" accept="image/*">
+                </div>
+
+                <button type="submit" class="btn" style="background-color: #27ae60; color: white; width: 100%;">Descargar PDF</button>
             </form>
         </div>
     </div>
