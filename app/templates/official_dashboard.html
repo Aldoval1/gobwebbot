@@ -271,5 +271,83 @@
         {% endif %}
     </div>
 
+    <!-- The Modal -->
+    <div id="sabesModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Generar Reporte SABES</h2>
+            <form action="{{ url_for('main.generate_sabes_pdf') }}" method="POST" enctype="multipart/form-data">
+
+                <div class="form-group">
+                    <label for="nombre_agente">Nombre del Agente:</label>
+                    <input type="text" id="nombre_agente" name="nombre_agente" required value="{{ current_user.first_name }} {{ current_user.last_name }}">
+                </div>
+
+                <div class="form-group">
+                    <label for="fecha">Fecha:</label>
+                    <input type="date" id="fecha" name="fecha" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="detalles">Detalles del Reporte:</label>
+                    <textarea id="detalles" name="detalles" rows="4" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="evidence_photo">Evidencia (Foto):</label>
+                    <input type="file" id="evidence_photo" name="evidence_photo" accept="image/*">
+                </div>
+
+                <button type="submit" class="btn" style="background-color: #27ae60; color: white; width: 100%;">Descargar PDF</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Accordion Logic
+            var acc = document.getElementsByClassName("accordion");
+            var i;
+
+            for (i = 0; i < acc.length; i++) {
+                acc[i].addEventListener("click", function() {
+                    this.classList.toggle("active");
+                    var panel = this.nextElementSibling;
+                    if (panel.style.maxHeight) {
+                        panel.style.maxHeight = null;
+                    } else {
+                        // Set max-height to a generous value if scrollHeight is tricky, or recalculate
+                        panel.style.maxHeight = panel.scrollHeight + "px";
+                    }
+                });
+            }
+
+            // Modal Logic
+            var modal = document.getElementById("sabesModal");
+            var btn = document.getElementById("openModalBtn");
+            var span = document.getElementsByClassName("close")[0];
+
+            if (btn) {
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    modal.style.display = "block";
+                    var today = new Date().toISOString().split('T')[0];
+                    document.getElementById("fecha").value = today;
+                }
+            }
+
+            if (span) {
+                span.onclick = function() {
+                    modal.style.display = "none";
+                }
+            }
+
+            window.onclick = function(event) {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+        });
+    </script>
 </body>
 </html>

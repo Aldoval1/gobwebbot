@@ -442,6 +442,78 @@ def download_criminal_record():
 
 # --- PLANTILLAS ROUTES ---
 
+@bp.route('/official/plantillas/generate_sabes', methods=['POST'])
+@login_required
+def generate_sabes_pdf():
+    # Only allow officials
+    if not current_user.badge_id:
+        return redirect(url_for('main.index'))
+
+    # Get data from form
+    nombre_agente = request.form.get('nombre_agente')
+    fecha = request.form.get('fecha')
+    detalles = request.form.get('detalles')
+    photo = request.files.get('evidence_photo')
+
+    # Create PDF using FPDF (Direct Generation for Reliability)
+    pdf = FPDF()
+    pdf.add_page()
+
+    # Title / Header
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, txt="REPORTE OFICIAL SABES", ln=True, align='C')
+    pdf.ln(10)
+
+    # Info Section
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(40, 10, txt="Agente:", align='L')
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, txt=nombre_agente, ln=True, align='L')
+
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(40, 10, txt="Fecha:", align='L')
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, txt=fecha, ln=True, align='L')
+
+    pdf.ln(5)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, txt="Detalles del Reporte:", ln=True, align='L')
+    pdf.set_font("Arial", '', 12)
+    pdf.multi_cell(0, 6, txt=detalles)
+
+    # Image Section
+    if photo and photo.filename:
+        filename = secure_filename(photo.filename)
+        # Ensure upload folder exists
+        if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
+            os.makedirs(current_app.config['UPLOAD_FOLDER'])
+
+        temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        photo.save(temp_path)
+
+        pdf.ln(10)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, txt="Evidencia Adjunta:", ln=True)
+        pdf.ln(5)
+
+        try:
+            # Add Image (Width=100mm)
+            pdf.image(temp_path, x=10, w=100)
+        except Exception as e:
+            pdf.set_font("Arial", 'I', 10)
+            pdf.cell(0, 10, txt=f"[No se pudo cargar la imagen: {str(e)}]", ln=True)
+
+    # Footer / Signature
+    pdf.ln(30)
+    pdf.cell(0, 10, txt="__________________________", ln=True, align='R')
+    pdf.cell(0, 10, txt="Firma del Agente", ln=True, align='R')
+
+    # Output
+    pdf_bytes = pdf.output()
+    response = make_response(bytes(pdf_bytes))
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=Reporte_SABES_{fecha}.pdf'
+    return response
 
 @bp.route('/licenses', methods=['GET', 'POST'])
 @login_required

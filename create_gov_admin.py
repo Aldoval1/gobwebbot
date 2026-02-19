@@ -1,5 +1,5 @@
 from app import create_app, db
-from app.models import User, BankAccount
+from app.models import User
 from werkzeug.security import generate_password_hash
 
 app = create_app()
@@ -42,16 +42,6 @@ def create_government_admin():
                 citizen.set_password(PASSWORD)
                 db.session.add(citizen)
                 db.session.commit()
-                
-                # Crear cuenta bancaria para el admin (necesaria para nóminas)
-                print("Creando cuenta bancaria del sistema...")
-                bank_acc = BankAccount(
-                    account_number="GOV-000",
-                    balance=1000000.0,
-                    user_id=citizen.id
-                )
-                db.session.add(bank_acc)
-                db.session.commit()
 
             print("Creando perfil de funcionario...")
             admin_user = User(
@@ -62,8 +52,7 @@ def create_government_admin():
                 department=DEPT,
                 official_rank=RANK,
                 official_status='Aprobado',
-                selfie_filename="default.jpg",
-                salary_account_number="GOV-000"
+                selfie_filename="default.jpg"
             )
             admin_user.set_password(PASSWORD)
             db.session.add(admin_user)
