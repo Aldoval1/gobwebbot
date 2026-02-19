@@ -229,6 +229,23 @@ def citizen_dashboard():
         return redirect(url_for('main.official_dashboard'))
     return render_template('citizen_dashboard.html')
 
+@bp.route('/congreso')
+@login_required
+def congress():
+    members = [
+        {'name': 'Luigi Salvatore', 'district': 1, 'votes': 1, 'bio': 'Congresista del Distrito 1.', 'photo': 'https://ui-avatars.com/api/?name=Luigi+Salvatore&background=random'},
+        {'name': 'Viktor Sokolov', 'district': 3, 'votes': 1, 'bio': 'Congresista del Distrito 3.', 'photo': 'https://ui-avatars.com/api/?name=Viktor+Sokolov&background=random'},
+        {'name': 'Oliver Evans', 'district': 6, 'votes': 2, 'bio': 'Congresista del Distrito 6 con doble voto.', 'photo': 'https://ui-avatars.com/api/?name=Oliver+Evans&background=random'},
+        {'name': 'Liam Hernandez', 'district': 2, 'votes': 1, 'bio': 'Congresista del Distrito 2.', 'photo': 'https://ui-avatars.com/api/?name=Liam+Hernandez&background=random'},
+        {'name': 'Seanna Kennedy', 'district': 5, 'votes': 2, 'bio': 'Congresista del Distrito 5 con doble voto.', 'photo': 'https://ui-avatars.com/api/?name=Seanna+Kennedy&background=random'},
+        {'name': 'Marcus Evans', 'district': 4, 'votes': 1, 'bio': 'Congresista del Distrito 4.', 'photo': 'https://ui-avatars.com/api/?name=Marcus+Evans&background=random'},
+        {'name': 'Harrison Crawford', 'district': 1, 'votes': 2, 'bio': 'Congresista del Distrito 1 con doble voto.', 'photo': 'https://ui-avatars.com/api/?name=Harrison+Crawford&background=random'},
+        {'name': 'Grant Marshall', 'district': 4, 'votes': 1, 'bio': 'Congresista del Distrito 4.', 'photo': 'https://ui-avatars.com/api/?name=Grant+Marshall&background=random'},
+        {'name': 'Albert MacTavish', 'district': 6, 'votes': 1, 'bio': 'Congresista del Distrito 6.', 'photo': 'https://ui-avatars.com/api/?name=Albert+MacTavish&background=random'},
+        {'name': 'Adam Smith', 'district': 2, 'votes': 1, 'bio': 'Congresista del Distrito 2.', 'photo': 'https://ui-avatars.com/api/?name=Adam+Smith&background=random'},
+    ]
+    return render_template('congress.html', members=members)
+
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
