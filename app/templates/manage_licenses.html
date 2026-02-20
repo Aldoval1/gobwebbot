@@ -60,9 +60,11 @@
                     </td>
                     <td>
                         <form action="{{ url_for('main.official_license_action', license_id=lic.id, action='approve') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-success btn-sm btn-action">Aprobar</button>
                         </form>
                         <form action="{{ url_for('main.official_license_action', license_id=lic.id, action='reject') }}" method="POST" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <button type="submit" class="btn btn-danger btn-sm btn-action" onclick="return confirm('¿Rechazar esta licencia?')">Rechazar</button>
                         </form>
                     </td>

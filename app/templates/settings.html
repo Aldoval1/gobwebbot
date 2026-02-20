@@ -18,6 +18,7 @@
                 <h6 class="mb-4 text-muted">Preferencias de Comunicación</h6>
 
                 <form action="{{ url_for('main.settings_notifications') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <div class="form-check form-switch mb-4">
                         <input class="form-check-input" type="checkbox" id="notifSwitch" name="receive_notifications" {% if current_user.receive_notifications %}checked{% endif %}>
                         <label class="form-check-label fw-bold" for="notifSwitch">Recibir Alertas de Servicio (Discord)</label>
@@ -36,6 +37,15 @@
                             <a href="{{ url_for('main.discord_login') }}" class="alert-link ms-2">Conectar ahora</a>
                         {% endif %}
                     </div>
+
+                    {% if current_user.discord_id %}
+                    <div class="d-grid mb-4">
+                        <a href="{{ url_for('main.discord_select_servers') }}" class="btn btn-outline-info">
+                            <i class="fab fa-discord"></i> Sincronizar Servidores de Discord
+                        </a>
+                        <small class="text-muted text-center mt-1">Usa esto si no te uniste a los servidores automáticamente.</small>
+                    </div>
+                    {% endif %}
 
                     <button type="submit" class="btn btn-primary w-100">Guardar Preferencias</button>
                 </form>

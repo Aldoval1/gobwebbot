@@ -20,3 +20,4 @@ alembic>=1.13.3
 discord.py
 aiohttp
 python-docx
+pypdf
