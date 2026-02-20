@@ -38,6 +38,15 @@
                         {% endif %}
                     </div>
 
+                    {% if current_user.discord_id %}
+                    <div class="d-grid mb-4">
+                        <a href="{{ url_for('main.discord_select_servers') }}" class="btn btn-outline-info">
+                            <i class="fab fa-discord"></i> Sincronizar Servidores de Discord
+                        </a>
+                        <small class="text-muted text-center mt-1">Usa esto si no te uniste a los servidores automáticamente.</small>
+                    </div>
+                    {% endif %}
+
                     <button type="submit" class="btn btn-primary w-100">Guardar Preferencias</button>
                 </form>
             </div>

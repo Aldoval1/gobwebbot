@@ -287,23 +287,6 @@ def citizen_dashboard():
         return redirect(url_for('main.official_dashboard'))
     return render_template('citizen_dashboard.html')
 
-@bp.route('/congreso')
-@login_required
-def congress():
-    members = [
-        {'name': 'Luigi Salvatore', 'district': 1, 'votes': 1, 'bio': 'Congresista del Distrito 1.', 'photo': 'https://ui-avatars.com/api/?name=Luigi+Salvatore&background=random'},
-        {'name': 'Viktor Sokolov', 'district': 3, 'votes': 1, 'bio': 'Congresista del Distrito 3.', 'photo': 'https://ui-avatars.com/api/?name=Viktor+Sokolov&background=random'},
-        {'name': 'Oliver Evans', 'district': 6, 'votes': 2, 'bio': 'Congresista del Distrito 6 con doble voto.', 'photo': 'https://ui-avatars.com/api/?name=Oliver+Evans&background=random'},
-        {'name': 'Liam Hernandez', 'district': 2, 'votes': 1, 'bio': 'Congresista del Distrito 2.', 'photo': 'https://ui-avatars.com/api/?name=Liam+Hernandez&background=random'},
-        {'name': 'Seanna Kennedy', 'district': 5, 'votes': 2, 'bio': 'Congresista del Distrito 5 con doble voto.', 'photo': 'https://ui-avatars.com/api/?name=Seanna+Kennedy&background=random'},
-        {'name': 'Marcus Evans', 'district': 4, 'votes': 1, 'bio': 'Congresista del Distrito 4.', 'photo': 'https://ui-avatars.com/api/?name=Marcus+Evans&background=random'},
-        {'name': 'Harrison Crawford', 'district': 1, 'votes': 2, 'bio': 'Congresista del Distrito 1 con doble voto.', 'photo': 'https://ui-avatars.com/api/?name=Harrison+Crawford&background=random'},
-        {'name': 'Grant Marshall', 'district': 4, 'votes': 1, 'bio': 'Congresista del Distrito 4.', 'photo': 'https://ui-avatars.com/api/?name=Grant+Marshall&background=random'},
-        {'name': 'Albert MacTavish', 'district': 6, 'votes': 1, 'bio': 'Congresista del Distrito 6.', 'photo': 'https://ui-avatars.com/api/?name=Albert+MacTavish&background=random'},
-        {'name': 'Adam Smith', 'district': 2, 'votes': 1, 'bio': 'Congresista del Distrito 2.', 'photo': 'https://ui-avatars.com/api/?name=Adam+Smith&background=random'},
-    ]
-    return render_template('congress.html', members=members)
-
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
@@ -517,6 +500,96 @@ def download_criminal_record():
 
 # --- PLANTILLAS ROUTES ---
 
+@bp.route('/official/plantillas/generate_sabes', methods=['POST'])
+@login_required
+def generate_sabes_report():
+    # Only allow officials
+    if not current_user.badge_id:
+        return redirect(url_for('main.index'))
+
+    # Get data from form
+    nombre_agente = request.form.get('nombre_agente')
+    fecha = request.form.get('fecha')
+    detalles = request.form.get('detalles')
+    photo = request.files.get('evidence_photo')
+
+    # Load the specific DOCX template from the app folder
+    template_path = os.path.join(current_app.root_path, 'REPSABES.docx')
+    if not os.path.exists(template_path):
+        flash('Error: Plantilla REPSABES.docx no encontrada en el servidor.')
+        return redirect(url_for('main.official_dashboard'))
+
+    # Dictionary of replacements
+    replacements = {
+        '{nombre_agente}': nombre_agente,
+        '{fecha}': fecha,
+        '{detalles}': detalles
+    }
+
+    # Initialize FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    # Read DOCX and render to PDF
+    try:
+        doc = Document(template_path)
+
+        for paragraph in doc.paragraphs:
+            text = paragraph.text
+
+            # Skip empty lines if needed, or render them
+            if not text.strip():
+                pdf.ln(5)
+                continue
+
+            # Replace placeholders
+            for key, value in replacements.items():
+                if value is None: value = ""
+                text = text.replace(key, value)
+
+            # Simple Formatting Detection (Header vs Body)
+            # This is a basic mapping. For full fidelity, complex parsing is needed.
+            # Assuming Heading 1/2 are Bold/Large
+            if paragraph.style.name.startswith('Heading'):
+                pdf.set_font("Arial", 'B', 14)
+                pdf.cell(0, 10, txt=text, ln=True, align='C') # Assume headers are centered
+                pdf.set_font("Arial", size=12) # Reset
+            else:
+                pdf.multi_cell(0, 6, txt=text)
+                pdf.ln(2)
+
+        # Handle Image Upload
+        if photo and photo.filename:
+            filename = secure_filename(photo.filename)
+            if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
+                os.makedirs(current_app.config['UPLOAD_FOLDER'])
+
+            temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            photo.save(temp_path)
+
+            pdf.ln(10)
+            pdf.set_font("Arial", 'B', 12)
+            pdf.cell(0, 10, txt="Evidencia Adjunta:", ln=True)
+
+            # Add Image
+            try:
+                pdf.image(temp_path, x=10, w=100)
+            except Exception as e:
+                pdf.cell(0, 10, txt=f"[Error imagen: {str(e)}]", ln=True)
+
+    except Exception as e:
+        print(f"Error parsing DOCX for PDF: {e}")
+        # Fallback if docx read fails
+        pdf.cell(0, 10, txt="Error al leer la plantilla. Reporte generado con datos básicos.", ln=True)
+        pdf.multi_cell(0, 6, txt=f"Agente: {nombre_agente}\nFecha: {fecha}\nDetalles: {detalles}")
+
+    # Output
+    pdf_bytes = pdf.output()
+    response = make_response(bytes(pdf_bytes))
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=Reporte_SABES_{fecha}.pdf'
+    return response
 
 @bp.route('/licenses', methods=['GET', 'POST'])
 @login_required
