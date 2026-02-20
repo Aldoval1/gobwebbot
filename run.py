@@ -8,7 +8,7 @@ from sqlalchemy.exc import ProgrammingError, InvalidRequestError
 # Importar modelos para que SQLAlchemy sepa qué tablas crear
 from app.models import (
     User, TrafficFine, Comment, License, CriminalRecord,
-    Appointment, Business
+    Appointment, Business, Document
 )
 
 load_dotenv()
