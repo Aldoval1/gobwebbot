@@ -31,7 +31,11 @@
 <body>
     <nav class="navbar navbar-dark bg-dark mb-0">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('main.official_dashboard') }}">← Volver al Panel Oficial</a>
+            {% if current_user.is_authenticated and current_user.badge_id %}
+                <a class="navbar-brand" href="{{ url_for('main.official_dashboard') }}">← Volver al Panel Oficial</a>
+            {% else %}
+                <a class="navbar-brand" href="{{ url_for('main.index') }}">← Volver al Inicio</a>
+            {% endif %}
             <span class="navbar-text">
                 SA Finder v1.0
             </span>
@@ -57,7 +61,7 @@
 
         <div class="row">
             <!-- Search Column -->
-            <div class="col-md-8">
+            <div class="{% if current_user.is_authenticated and current_user.badge_id %}col-md-8{% else %}col-md-12{% endif %}">
                 <div class="card mb-4">
                     <div class="card-body">
                         <form action="{{ url_for('main.safinder') }}" method="GET" class="d-flex gap-2">
@@ -96,7 +100,8 @@
                 {% endif %}
             </div>
 
-            <!-- Upload Column -->
+            <!-- Upload Column (Only for Officials) -->
+            {% if current_user.is_authenticated and current_user.badge_id %}
             <div class="col-md-4">
                 <div class="card border-primary">
                     <div class="card-header bg-primary text-white">
@@ -132,6 +137,7 @@
                     </ul>
                 </div>
             </div>
+            {% endif %}
         </div>
     </div>
 
