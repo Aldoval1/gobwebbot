@@ -498,6 +498,13 @@ def download_criminal_record():
     response.headers['Content-Disposition'] = f'attachment; filename=antecedentes_{current_user.dni}.pdf'
     return response
 
+@bp.route('/judicial')
+@login_required
+def judicial():
+    if current_user.badge_id:
+        return redirect(url_for('main.official_dashboard'))
+    return render_template('judicial.html')
+
 # --- PLANTILLAS ROUTES ---
 
 @bp.route('/official/plantillas/generate_sabes', methods=['POST'])
