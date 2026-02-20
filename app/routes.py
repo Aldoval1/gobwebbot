@@ -816,6 +816,24 @@ def government_dashboard():
                            create_leader_form=create_leader_form,
                            all_users=all_users)
 
+# --- GOVERNMENT BRANCHES (PUBLIC/CITIZEN INFO) ---
+
+@bp.route('/government/judicial')
+def judicial():
+    return render_template('branch_info.html', branch="Poder Judicial")
+
+@bp.route('/government/legislative')
+def legislative():
+    return render_template('branch_info.html', branch="Poder Legislativo")
+
+@bp.route('/government/executive')
+def executive():
+    return render_template('branch_info.html', branch="Poder Ejecutivo")
+
+@bp.route('/government/sabes')
+def sabes():
+    return render_template('branch_info.html', branch="S.A.B.E.S.")
+
 @bp.route('/government/create_leader', methods=['POST'])
 @login_required
 def government_create_leader():
