@@ -519,77 +519,51 @@ def generate_sabes_report():
     fecha = request.form.get('fecha')
     detalles = request.form.get('detalles')
     photo = request.files.get('evidence_photo')
-
-    # Load the specific DOCX template from the app folder
-    template_path = os.path.join(current_app.root_path, 'REPSABES.docx')
-    if not os.path.exists(template_path):
-        flash('Error: Plantilla REPSABES.docx no encontrada en el servidor.')
-        return redirect(url_for('main.official_dashboard'))
-
-    # Dictionary of replacements
-    replacements = {
-        '{nombre_agente}': nombre_agente,
-        '{fecha}': fecha,
-        '{detalles}': detalles
-    }
+    titulo = request.form.get('titulo')
+    directed_to = request.form.get('directed_to')
 
     # Initialize FPDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
 
-    # Read DOCX and render to PDF
-    try:
-        doc = Document(template_path)
+    # Header / Title
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, txt=titulo if titulo else "Reporte SABES", ln=True, align='C')
+    pdf.ln(10)
 
-        for paragraph in doc.paragraphs:
-            text = paragraph.text
+    # Metadata
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 8, txt=f"Fecha: {fecha}", ln=True)
+    pdf.cell(0, 8, txt=f"Agente: {nombre_agente}", ln=True)
+    if directed_to:
+        pdf.cell(0, 8, txt=f"Dirigido a: {directed_to}", ln=True)
+    pdf.ln(10)
 
-            # Skip empty lines if needed, or render them
-            if not text.strip():
-                pdf.ln(5)
-                continue
+    # Details
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, txt="Detalles:", ln=True)
+    pdf.set_font("Arial", size=12)
+    pdf.multi_cell(0, 6, txt=detalles)
+    pdf.ln(10)
 
-            # Replace placeholders
-            for key, value in replacements.items():
-                if value is None: value = ""
-                text = text.replace(key, value)
+    # Evidence Photo
+    if photo and photo.filename:
+        filename = secure_filename(photo.filename)
+        if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
+            os.makedirs(current_app.config['UPLOAD_FOLDER'])
 
-            # Simple Formatting Detection (Header vs Body)
-            # This is a basic mapping. For full fidelity, complex parsing is needed.
-            # Assuming Heading 1/2 are Bold/Large
-            if paragraph.style.name.startswith('Heading'):
-                pdf.set_font("Arial", 'B', 14)
-                pdf.cell(0, 10, txt=text, ln=True, align='C') # Assume headers are centered
-                pdf.set_font("Arial", size=12) # Reset
-            else:
-                pdf.multi_cell(0, 6, txt=text)
-                pdf.ln(2)
+        temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        photo.save(temp_path)
 
-        # Handle Image Upload
-        if photo and photo.filename:
-            filename = secure_filename(photo.filename)
-            if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
-                os.makedirs(current_app.config['UPLOAD_FOLDER'])
+        pdf.ln(5)
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, txt="Evidencia Gráfica:", ln=True)
 
-            temp_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            photo.save(temp_path)
-
-            pdf.ln(10)
-            pdf.set_font("Arial", 'B', 12)
-            pdf.cell(0, 10, txt="Evidencia Adjunta:", ln=True)
-
-            # Add Image
-            try:
-                pdf.image(temp_path, x=10, w=100)
-            except Exception as e:
-                pdf.cell(0, 10, txt=f"[Error imagen: {str(e)}]", ln=True)
-
-    except Exception as e:
-        print(f"Error parsing DOCX for PDF: {e}")
-        # Fallback if docx read fails
-        pdf.cell(0, 10, txt="Error al leer la plantilla. Reporte generado con datos básicos.", ln=True)
-        pdf.multi_cell(0, 6, txt=f"Agente: {nombre_agente}\nFecha: {fecha}\nDetalles: {detalles}")
+        try:
+            pdf.image(temp_path, x=10, w=150)
+        except Exception as e:
+            pdf.cell(0, 10, txt=f"[Error al adjuntar imagen: {str(e)}]", ln=True)
 
     # Output
     pdf_bytes = pdf.output()
