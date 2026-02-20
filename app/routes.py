@@ -1031,11 +1031,9 @@ def add_comment(user_id):
 # --- SA FINDER ROUTES ---
 
 @bp.route('/official/safinder', methods=['GET'])
-@login_required
 def safinder():
-    if not current_user.badge_id:
-        flash('Acceso denegado.')
-        return redirect(url_for('main.citizen_dashboard'))
+    # Public access allowed for viewing/search
+    # Uploads restricted to officials via template logic and separate upload route
 
     query = request.args.get('q', '')
     results = []
