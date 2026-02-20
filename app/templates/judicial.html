@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Judicial - Gobierno de San Andreas</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+            background-color: #f4f6f9 !important;
+            margin: 0 !important;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 2em;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #7f8c8d;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: #3498db;
+        }
+
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+
+        .template-card {
+            background-color: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .template-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+            border-color: #3498db;
+        }
+
+        .card-icon {
+            font-size: 3em;
+            color: #e74c3c; /* Red color for PDF */
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .btn-download {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 15px;
+            display: inline-block;
+            transition: background 0.2s;
+        }
+        .btn-download:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-gavel" style="margin-right: 15px; color: #2c3e50;"></i>Judicial</h1>
+            <a href="{{ url_for('main.citizen_dashboard') }}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Volver al Panel
+            </a>
+        </div>
+
+        <p style="margin-bottom: 30px; color: #7f8c8d; font-size: 1.1em;">
+            Aquí puedes descargar las plantillas oficiales para realizar trámites judiciales. Rellena los documentos y preséntalos en las oficinas correspondientes.
+        </p>
+
+        <div class="templates-grid">
+
+            <div class="template-card">
+                <i class="fas fa-file-pdf card-icon"></i>
+                <div class="card-title">Solicitud de Demanda</div>
+                <a href="{{ url_for('static', filename='pdf/solicitud_demanda.pdf') }}" class="btn-download" download>
+                    <i class="fas fa-download"></i> Descargar
+                </a>
+            </div>
+
+            <div class="template-card">
+                <i class="fas fa-file-pdf card-icon"></i>
+                <div class="card-title">Formulario de Denuncia</div>
+                <a href="{{ url_for('static', filename='pdf/denuncia.pdf') }}" class="btn-download" download>
+                    <i class="fas fa-download"></i> Descargar
+                </a>
+            </div>
+
+            <div class="template-card">
+                <i class="fas fa-file-pdf card-icon"></i>
+                <div class="card-title">Solicitud de Registro</div>
+                <a href="{{ url_for('static', filename='pdf/solicitud_registro.pdf') }}" class="btn-download" download>
+                    <i class="fas fa-download"></i> Descargar
+                </a>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
