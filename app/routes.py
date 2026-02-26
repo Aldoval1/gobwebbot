@@ -12,7 +12,7 @@ from app.forms import (
 from app.models import (
     User, Comment, TrafficFine, License, CriminalRecord,
     CriminalRecordSubjectPhoto, CriminalRecordEvidencePhoto,
-    Appointment, Business, Document as DocModel
+    Appointment, Business, BusinessFine, Document as DocModel
 )
 from sqlalchemy import func
 from flask_login import current_user, login_user, logout_user, login_required
@@ -1331,3 +1331,175 @@ def delete_citizen_account(user_id):
 
     flash(f'Usuario {user.first_name} {user.last_name} eliminado permanentemente.')
     return redirect(url_for('main.official_dashboard'))
+
+@bp.route('/licenses/business/<int:business_id>/transfer', methods=['POST'])
+@login_required
+def transfer_business(business_id):
+    business = Business.query.get_or_404(business_id)
+    if business.owner_id != current_user.id:
+        flash('No tienes permiso para transferir este negocio.', 'danger')
+        return redirect(url_for('main.licenses'))
+
+    new_owner_dni = request.form.get('new_owner_dni')
+    new_owner = User.query.filter_by(dni=new_owner_dni).first()
+
+    if not new_owner:
+        flash('El usuario con ese DNI no existe.', 'danger')
+        return redirect(url_for('main.licenses'))
+
+    if new_owner.id == current_user.id:
+        flash('No puedes transferirte el negocio a ti mismo.', 'warning')
+        return redirect(url_for('main.licenses'))
+
+    # Transfer ownership
+    business.owner_id = new_owner.id
+
+    # Transfer associated licenses? Usually licenses are tied to business, so owner change is enough if logic uses business.owner
+    # Our License model has user_id. We need to update user_id on licenses too.
+    for lic in business.licenses:
+        lic.user_id = new_owner.id
+
+    db.session.commit()
+
+    notify_discord_bot(new_owner, f"🏢 **Nuevo Negocio Recibido**\n{current_user.first_name} {current_user.last_name} te ha transferido el negocio '{business.name}'.")
+    notify_discord_bot(current_user, f"🏢 **Negocio Transferido**\nHas transferido '{business.name}' a {new_owner.first_name} {new_owner.last_name}.")
+
+    flash(f'Negocio "{business.name}" transferido exitosamente a {new_owner.first_name} {new_owner.last_name}.', 'success')
+    return redirect(url_for('main.licenses'))
+
+@bp.route('/licenses/business/<int:business_id>/pay_fine/<int:fine_id>', methods=['POST'])
+@login_required
+def pay_business_fine(business_id, fine_id):
+    business = Business.query.get_or_404(business_id)
+    if business.owner_id != current_user.id:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.licenses'))
+
+    fine = BusinessFine.query.get_or_404(fine_id)
+    if fine.business_id != business.id:
+        flash('Multa no corresponde al negocio.', 'danger')
+        return redirect(url_for('main.licenses'))
+
+    if fine.status == 'Pagada':
+        flash('Esta multa ya está pagada.', 'info')
+    else:
+        fine.status = 'Pagada'
+        db.session.commit()
+        flash('Multa pagada exitosamente.', 'success')
+
+    return redirect(url_for('main.licenses'))
+
+@bp.route('/licenses/business/<int:business_id>/renew_license/<int:license_id>', methods=['POST'])
+@login_required
+def renew_business_license(business_id, license_id):
+    business = Business.query.get_or_404(business_id)
+    if business.owner_id != current_user.id:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.licenses'))
+
+    lic = License.query.get_or_404(license_id)
+    if lic.business_id != business.id:
+        flash('Licencia no corresponde al negocio.', 'danger')
+        return redirect(url_for('main.licenses'))
+
+    # Logic: Set to Pendiente for approval
+    lic.status = 'Pendiente'
+    db.session.commit()
+
+    flash(f'Solicitud de renovación para "{lic.type}" enviada. Espera aprobación.', 'success')
+    return redirect(url_for('main.licenses'))
+
+# --- OFFICIAL BUSINESS ROUTES ---
+
+@bp.route('/official/businesses')
+@login_required
+def official_businesses():
+    allowed_departments = ['SABES', 'Gobierno']
+    if current_user.department not in allowed_departments:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.official_dashboard'))
+
+    query = request.args.get('q', '')
+    if query:
+        search = f"%{query}%"
+        businesses = Business.query.filter(Business.name.ilike(search)).all()
+    else:
+        businesses = Business.query.all()
+
+    return render_template('official_businesses.html', businesses=businesses)
+
+@bp.route('/official/business/<int:business_id>/fine', methods=['POST'])
+@login_required
+def official_business_fine(business_id):
+    allowed_departments = ['SABES', 'Gobierno']
+    if current_user.department not in allowed_departments:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.official_dashboard'))
+
+    business = Business.query.get_or_404(business_id)
+    reason = request.form.get('reason')
+
+    if not reason:
+        flash('Debes especificar una razón.', 'warning')
+        return redirect(url_for('main.official_businesses'))
+
+    fine = BusinessFine(
+        reason=reason,
+        business_id=business.id,
+        author_id=current_user.id,
+        status='Pendiente'
+    )
+    db.session.add(fine)
+    db.session.commit()
+
+    notify_discord_bot(business.owner, f"🚨 **Multa a Negocio**\nTu negocio '{business.name}' ha recibido una multa.\nRazón: {reason}\nAgente: {current_user.first_name} {current_user.last_name}")
+
+    flash(f'Multa aplicada a "{business.name}".', 'success')
+    return redirect(url_for('main.official_businesses'))
+
+@bp.route('/official/business/<int:business_id>/approve_registration', methods=['POST'])
+@login_required
+def official_approve_business_registration(business_id):
+    allowed_departments = ['SABES', 'Gobierno']
+    if current_user.department not in allowed_departments:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.official_dashboard'))
+
+    business = Business.query.get_or_404(business_id)
+    business.status = 'Aprobado'
+
+    # Also approve the initial "Licencia de Funcionamiento" if present and pending?
+    # Usually registration approval implies functionality approval.
+    for lic in business.licenses:
+        if lic.type == 'Licencia de Funcionamiento' and lic.status == 'Pendiente':
+            lic.status = 'Activa'
+            lic.issue_date = datetime.utcnow().date()
+            lic.expiration_date = datetime.utcnow().date() + timedelta(days=30)
+
+    db.session.commit()
+
+    notify_discord_bot(business.owner, f"✅ **Negocio Aprobado**\nTu negocio '{business.name}' ha sido registrado y aprobado exitosamente.")
+
+    flash(f'Negocio "{business.name}" aprobado.', 'success')
+    return redirect(url_for('main.official_businesses'))
+
+@bp.route('/official/business/<int:business_id>/reject_registration', methods=['POST'])
+@login_required
+def official_reject_business_registration(business_id):
+    allowed_departments = ['SABES', 'Gobierno']
+    if current_user.department not in allowed_departments:
+        flash('Acceso denegado.', 'danger')
+        return redirect(url_for('main.official_dashboard'))
+
+    business = Business.query.get_or_404(business_id)
+    # Delete business or set to Rejected? User said "Once accepted... it appears".
+    # Usually rejection means you have to apply again or fix it.
+    # Deleting cleans up.
+
+    notify_discord_bot(business.owner, f"❌ **Registro Rechazado**\nLa solicitud para tu negocio '{business.name}' ha sido rechazada.")
+
+    db.session.delete(business)
+    db.session.commit()
+
+    flash(f'Solicitud de negocio rechazada y eliminada.', 'warning')
+    return redirect(url_for('main.official_businesses'))

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Control de Negocios - SABES</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; overflow-x: hidden; }
+        .container-fluid { padding: 20px; }
+
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+            height: 85vh;
+            overflow: hidden;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            background-color: #e9ecef;
+        }
+
+        .map-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease-out;
+            cursor: grab;
+        }
+
+        .map-content:active {
+            cursor: grabbing;
+        }
+
+        .map-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            border: 2px solid white;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .map-marker:hover {
+            z-index: 100;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 20;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .zoom-btn:hover { background-color: #f0f0f0; }
+
+        .sidebar {
+            height: 85vh;
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .business-card {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .business-card:hover { background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2>🏢 Control de Negocios y Licencias</h2>
+            <a href="{{ url_for('main.official_dashboard') }}" class="btn btn-secondary">Volver al Panel</a>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="alert alert-info">
+                    {% for message in messages %}{{ message }}<br>{% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <!-- MAPA -->
+            <div class="col-md-8">
+                <div class="map-wrapper" id="mapWrapper">
+                    <div class="map-content" id="mapContent">
+                        <img src="{{ url_for('static', filename='img/mi_mapa.png') }}" class="map-image" alt="Mapa" draggable="false">
+
+                        {% for bus in businesses %}
+                            {% if bus.location_x and bus.location_y %}
+                            <div class="map-marker"
+                                 style="left: {{ bus.location_x }}%; top: {{ bus.location_y }}%; background-color: {% if bus.status == 'Aprobado' %}#0d6efd{% else %}#ffc107{% endif %};"
+                                 title="{{ bus.name }} ({{ bus.type }})"
+                                 onclick="openBusinessModal('{{ bus.id }}')"
+                                 data-bs-toggle="tooltip" data-bs-placement="top">
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+
+                    <div class="zoom-controls">
+                        <div class="zoom-btn" onclick="zoomMap(0.2)"><i class="fas fa-plus"></i></div>
+                        <div class="zoom-btn" onclick="zoomMap(-0.2)"><i class="fas fa-minus"></i></div>
+                        <div class="zoom-btn" onclick="resetZoom()"><i class="fas fa-compress"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LISTA LATERAL -->
+            <div class="col-md-4">
+                <div class="sidebar">
+                    <form action="{{ url_for('main.official_businesses') }}" method="GET" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" class="form-control" name="q" placeholder="Buscar negocio..." value="{{ request.args.get('q', '') }}">
+                            <button class="btn btn-primary" type="submit">Buscar</button>
+                        </div>
+                    </form>
+
+                    <div class="list-group">
+                        {% for bus in businesses %}
+                        <div class="list-group-item list-group-item-action business-card" onclick="openBusinessModal('{{ bus.id }}')">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">{{ bus.name }}</h5>
+                                <small class="{% if bus.status == 'Aprobado' %}text-primary{% else %}text-warning{% endif %}">
+                                    {{ bus.status }}
+                                </small>
+                            </div>
+                            <p class="mb-1">{{ bus.type }}</p>
+                            <small class="text-muted">Dueño: {{ bus.owner.first_name }} {{ bus.owner.last_name }}</small>
+                        </div>
+                        {% else %}
+                        <p class="text-center text-muted mt-3">No se encontraron negocios.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALES PARA CADA NEGOCIO -->
+    {% for bus in businesses %}
+    <div class="modal fade" id="businessModal{{ bus.id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">{{ bus.name }} <span class="badge bg-secondary">{{ bus.type }}</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Detalles</h6>
+                            <p><strong>Dueño:</strong> {{ bus.owner.first_name }} {{ bus.owner.last_name }} ({{ bus.owner.dni }})</p>
+                            <p><strong>Estado:</strong> {{ bus.status }}</p>
+
+                            {% if bus.photo_filename %}
+                            <img src="{{ url_for('static', filename='img/' + bus.photo_filename) }}" class="img-fluid rounded mb-3" alt="Foto Local">
+                            {% endif %}
+
+                            {% if bus.status == 'Pendiente' %}
+                                <div class="d-grid gap-2">
+                                    <form action="{{ url_for('main.official_approve_business_registration', business_id=bus.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button class="btn btn-success w-100" type="submit">✅ Aprobar Registro</button>
+                                    </form>
+                                    <form action="{{ url_for('main.official_reject_business_registration', business_id=bus.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button class="btn btn-danger w-100" type="submit">❌ Rechazar Registro</button>
+                                    </form>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <!-- ACCIONES -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-danger text-white">Sanciones</div>
+                                <div class="card-body">
+                                    <form action="{{ url_for('main.official_business_fine', business_id=bus.id) }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" name="reason" placeholder="Razón de la multa" required>
+                                            <button class="btn btn-outline-danger" type="submit">Multar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <h6>Licencias</h6>
+                            <ul class="list-group list-group-flush">
+                                {% for lic in bus.licenses %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                    <small>{{ lic.type }} <br>
+                                        <span class="text-muted">{{ lic.status }}</span>
+                                    </small>
+                                    {% if lic.status == 'Pendiente' %}
+                                    <div>
+                                        <form action="{{ url_for('main.official_license_action', license_id=lic.id, action='approve') }}" method="POST" style="display:inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button class="btn btn-xs btn-success py-0" title="Aprobar">✓</button>
+                                        </form>
+                                        <form action="{{ url_for('main.official_license_action', license_id=lic.id, action='reject') }}" method="POST" style="display:inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button class="btn btn-xs btn-danger py-0" title="Rechazar">✗</button>
+                                        </form>
+                                    </div>
+                                    {% endif %}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function openBusinessModal(id) {
+            var myModal = new bootstrap.Modal(document.getElementById('businessModal' + id));
+            myModal.show();
+        }
+
+        // --- MAP LOGIC (REUSED) ---
+        const wrapper = document.getElementById('mapWrapper');
+        const content = document.getElementById('mapContent');
+
+        let scale = 1;
+        let pannedX = 0;
+        let pannedY = 0;
+        let isDragging = false;
+        let startX, startY;
+
+        function updateTransform() {
+            content.style.transform = `translate(${pannedX}px, ${pannedY}px) scale(${scale})`;
+        }
+
+        window.zoomMap = function(delta) {
+            scale += delta;
+            scale = Math.min(Math.max(1, scale), 5);
+            if (scale === 1) { pannedX = 0; pannedY = 0; }
+            updateTransform();
+        };
+
+        window.resetZoom = function() {
+            scale = 1; pannedX = 0; pannedY = 0;
+            updateTransform();
+        };
+
+        wrapper.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -0.1 : 0.1;
+            scale += delta;
+            scale = Math.min(Math.max(1, scale), 5);
+            updateTransform();
+        });
+
+        content.addEventListener('mousedown', function(e) {
+            if (e.target.classList.contains('map-marker')) return; // Allow clicking markers
+            isDragging = true;
+            startX = e.clientX - pannedX;
+            startY = e.clientY - pannedY;
+            content.style.cursor = 'grabbing';
+        });
+
+        window.addEventListener('mouseup', function() {
+            isDragging = false;
+            content.style.cursor = 'grab';
+        });
+
+        window.addEventListener('mousemove', function(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            pannedX = e.clientX - startX;
+            pannedY = e.clientY - startY;
+            updateTransform();
+        });
+    </script>
+</body>
+</html>

@@ -78,6 +78,18 @@ with app.app_context():
                     conn.commit()
                 print("✅ Columna 'created_at' agregada a Appointment.")
 
+            # Check for 'status' in Business
+            business_columns = [col['name'] for col in inspector.get_columns('business')]
+            if 'status' not in business_columns:
+                print("⚠️ Columna 'status' faltante en tabla 'business'. Agregando...")
+                with db.engine.connect() as conn:
+                    if db.engine.dialect.name == 'postgresql':
+                        conn.execute(text("ALTER TABLE business ADD COLUMN status VARCHAR(20) DEFAULT 'Pendiente'"))
+                    else:
+                        conn.execute(text("ALTER TABLE business ADD COLUMN status VARCHAR(20) DEFAULT 'Pendiente'"))
+                    conn.commit()
+                print("✅ Columna 'status' agregada a Business.")
+
         except Exception as e:
             print(f"❌ Error en Defensive Migration: {e}")
 

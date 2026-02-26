@@ -67,10 +67,22 @@ class Business(db.Model):
     location_x = db.Column(db.Float)
     location_y = db.Column(db.Float)
     photo_filename = db.Column(db.String(120), nullable=True)
+    status = db.Column(db.String(20), default='Pendiente') # Pendiente, Aprobado
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     licenses = db.relationship('License', backref='business', lazy='dynamic', cascade="all, delete-orphan")
+    fines = db.relationship('BusinessFine', backref='business', lazy='dynamic', cascade="all, delete-orphan")
+
+class BusinessFine(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    reason = db.Column(db.String(200))
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(20), default='Pendiente') # Pendiente, Pagada
+    business_id = db.Column(db.Integer, db.ForeignKey('business.id'))
+    author_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    author = db.relationship('User', foreign_keys=[author_id])
 
 class License(db.Model):
     id = db.Column(db.Integer, primary_key=True)
