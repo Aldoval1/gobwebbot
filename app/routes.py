@@ -53,20 +53,98 @@ def notify_discord_bot(user, message):
     except Exception as e:
         print(f"Error enviando notificación a Discord: {e}")
 
+def _build_dependency_map(inspector):
+    """
+    Scans the database to build a map of table dependencies:
+    { 'parent_table': [ {'table': 'child_table', 'col': 'child_col', 'ref_col': 'parent_col'}, ... ] }
+    """
+    dep_map = {}
+    try:
+        tables = inspector.get_table_names()
+        for table_name in tables:
+            try:
+                fks = inspector.get_foreign_keys(table_name)
+                for fk in fks:
+                    ref_table = fk.get('referred_table')
+                    if ref_table:
+                        if ref_table not in dep_map:
+                            dep_map[ref_table] = []
+
+                        constrained = fk.get('constrained_columns')
+                        referred = fk.get('referred_columns')
+
+                        if constrained and referred:
+                            dep_map[ref_table].append({
+                                'table': table_name,
+                                'col': constrained[0], # Assume single col FK for simplicity
+                                'ref_col': referred[0]
+                            })
+            except Exception as e:
+                current_app.logger.warning(f"Error inspecting table {table_name}: {e}")
+    except Exception as e:
+        current_app.logger.error(f"Error building dependency map: {e}")
+    return dep_map
+
+def _cascade_delete(inspector, table_name, id_list, dep_map):
+    """
+    Recursively deletes rows in dependent tables.
+    """
+    if not id_list:
+        return 0
+
+    count = 0
+    dependents = dep_map.get(table_name, [])
+
+    # Use tuples for SQL IN clause
+    ids_str = ', '.join(map(str, id_list))
+
+    for dep in dependents:
+        child_table = dep['table']
+        child_col = dep['col']
+        # We need to find IDs of rows in child_table that reference these parents
+        # so we can recurse on THEM.
+        # Assuming child table has a primary key named 'id'. If not, we skip recursion and just delete.
+        try:
+            # Check for PK
+            pk = inspector.get_pk_constraint(child_table)
+            pk_col = pk.get('constrained_columns', ['id'])[0] if pk and pk.get('constrained_columns') else None
+
+            if pk_col:
+                # Find child IDs
+                query_ids = text(f"SELECT {pk_col} FROM {child_table} WHERE {child_col} IN ({ids_str})")
+                child_ids_result = db.session.execute(query_ids)
+                child_ids = [row[0] for row in child_ids_result]
+
+                if child_ids:
+                    current_app.logger.info(f"Recursing delete for {child_table} (dependent of {table_name}) IDs: {len(child_ids)}")
+                    _cascade_delete(inspector, child_table, child_ids, dep_map)
+
+            # Delete the rows
+            query_del = text(f"DELETE FROM {child_table} WHERE {child_col} IN ({ids_str})")
+            result = db.session.execute(query_del)
+            current_app.logger.info(f"Deleted {result.rowcount} rows from {child_table} (dependent of {table_name})")
+            count += result.rowcount
+            db.session.flush() # Ensure deletions are processed
+
+        except Exception as e:
+            current_app.logger.error(f"Error cascading delete for {child_table}: {e}")
+
+    # Note: The caller is responsible for deleting the rows in 'table_name' itself
+    return count
+
 def _cleanup_financial_records(user_id):
     """
     Dynamically inspects and cleans up legacy financial tables (like bank_account)
-    and their dependencies to prevent Foreign Key errors during user deletion.
+    and their dependencies recursively.
     """
     try:
         inspector = inspect(db.engine)
         tables = inspector.get_table_names()
 
-        # Only proceed if bank_account table exists
         if 'bank_account' not in tables:
             return
 
-        # 0. Get Bank Account IDs first to avoid complex subqueries and debug matches
+        # 0. Get Bank Account IDs
         ba_ids_result = db.session.execute(text("SELECT id FROM bank_account WHERE user_id = :uid"), {'uid': user_id})
         ba_ids = [row[0] for row in ba_ids_result]
 
@@ -75,44 +153,14 @@ def _cleanup_financial_records(user_id):
         if not ba_ids:
             return
 
-        # 1. Find and clear dependencies of bank_account (e.g., transactions)
-        # We need to find all tables that have a Foreign Key pointing to 'bank_account'
-        for table_name in tables:
-            try:
-                fks = inspector.get_foreign_keys(table_name)
-                for fk in fks:
-                    if fk.get('referred_table') == 'bank_account':
-                        # Found a dependency!
-                        constrained_cols = fk.get('constrained_columns')
-                        referred_cols = fk.get('referred_columns')
+        # 1. Build Map
+        dep_map = _build_dependency_map(inspector)
 
-                        if constrained_cols and referred_cols:
-                            child_col = constrained_cols[0]
+        # 2. Cascade Delete Dependencies
+        _cascade_delete(inspector, 'bank_account', ba_ids, dep_map)
 
-                            # Use tuples for IN clause if multiple IDs
-                            if len(ba_ids) == 1:
-                                ids_str = str(ba_ids[0])
-                            else:
-                                ids_str = ', '.join(map(str, ba_ids))
-
-                            current_app.logger.info(f"Cleaning dependency: {table_name}.{child_col} -> bank_account ({ids_str})")
-
-                            # Direct DELETE using IDs
-                            query = text(f"DELETE FROM {table_name} WHERE {child_col} IN ({ids_str})")
-                            result = db.session.execute(query)
-                            current_app.logger.info(f"Deleted {result.rowcount} rows from {table_name}")
-                            db.session.flush()
-
-            except Exception as e:
-                current_app.logger.error(f"Error inspecting/cleaning table {table_name}: {e}")
-
-        # 2. Finally, delete the bank_account records themselves
-        current_app.logger.info(f"Deleting bank_account records for user {user_id}")
-        if len(ba_ids) == 1:
-             ids_str = str(ba_ids[0])
-        else:
-             ids_str = ', '.join(map(str, ba_ids))
-
+        # 3. Delete Bank Accounts
+        ids_str = ', '.join(map(str, ba_ids))
         result = db.session.execute(text(f"DELETE FROM bank_account WHERE id IN ({ids_str})"))
         current_app.logger.info(f"Deleted {result.rowcount} bank_account rows")
         db.session.flush()
