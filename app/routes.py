@@ -53,6 +53,16 @@ def notify_discord_bot(user, message):
     except Exception as e:
         print(f"Error enviando notificación a Discord: {e}")
 
+def _perform_user_deletion(user):
+    # 1. Nullify author_id in related records to avoid deletion or integrity errors
+    TrafficFine.query.filter_by(author_id=user.id).update({TrafficFine.author_id: None})
+    CriminalRecord.query.filter_by(author_id=user.id).update({CriminalRecord.author_id: None})
+    Comment.query.filter_by(author_id=user.id).update({Comment.author_id: None})
+    DocModel.query.filter_by(uploader_id=user.id).update({DocModel.uploader_id: None})
+
+    # 2. Delete user (Cascade will handle owned records)
+    db.session.delete(user)
+
 @bp.route('/official/toggle_duty', methods=['POST'])
 @login_required
 def official_toggle_duty():
@@ -909,6 +919,54 @@ def government_create_leader():
 
     return redirect(url_for('main.government_dashboard'))
 
+@bp.route('/government/users', methods=['GET'])
+@login_required
+def government_users():
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.official_dashboard'))
+
+    users = User.query.all()
+    return render_template('government_users.html', users=users)
+
+@bp.route('/government/users/bulk_action', methods=['POST'])
+@login_required
+def government_users_bulk_action():
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.official_dashboard'))
+
+    action = request.form.get('action')
+    user_ids = request.form.getlist('user_ids')
+
+    if not user_ids:
+        flash('No seleccionaste ningún usuario.')
+        return redirect(url_for('main.government_users'))
+
+    count = 0
+
+    if action == 'unlink_discord':
+        for uid in user_ids:
+            u = User.query.get(uid)
+            if u:
+                u.discord_id = None
+                count += 1
+        db.session.commit()
+        flash(f'Discord desvinculado de {count} usuarios.')
+
+    elif action == 'delete':
+        for uid in user_ids:
+            u = User.query.get(uid)
+            if u:
+                if u.id == current_user.id:
+                    continue # Skip self
+                _perform_user_deletion(u)
+                count += 1
+        db.session.commit()
+        flash(f'{count} usuarios eliminados permanentemente.')
+
+    return redirect(url_for('main.government_users'))
+
 @bp.route('/official/kick_member/<int:user_id>', methods=['POST'])
 @login_required
 def kick_member(user_id):
@@ -1268,14 +1326,7 @@ def delete_citizen_account(user_id):
 
     user = User.query.get_or_404(user_id)
 
-    # 1. Nullify author_id in related records to avoid deletion or integrity errors
-    TrafficFine.query.filter_by(author_id=user.id).update({TrafficFine.author_id: None})
-    CriminalRecord.query.filter_by(author_id=user.id).update({CriminalRecord.author_id: None})
-    Comment.query.filter_by(author_id=user.id).update({Comment.author_id: None})
-    DocModel.query.filter_by(uploader_id=user.id).update({DocModel.uploader_id: None})
-
-    # 2. Delete user (Cascade will handle owned records)
-    db.session.delete(user)
+    _perform_user_deletion(user)
     db.session.commit()
 
     flash(f'Usuario {user.first_name} {user.last_name} eliminado permanentemente.')
