@@ -5,7 +5,8 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 from app.models import User
 
 class LoginForm(FlaskForm):
-    dni = StringField('DNI', validators=[DataRequired()])
+    first_name = StringField('Nombre', validators=[DataRequired()])
+    last_name = StringField('Apellido', validators=[DataRequired()])
     password = PasswordField('Contraseña', validators=[DataRequired()])
     remember_me = BooleanField('Recuérdame')
     submit = SubmitField('Iniciar Sesión')
@@ -13,11 +14,8 @@ class LoginForm(FlaskForm):
 class RegistrationForm(FlaskForm):
     first_name = StringField('Nombre', validators=[DataRequired()])
     last_name = StringField('Apellido', validators=[DataRequired()])
-    dni = StringField('DNI', validators=[DataRequired()])
     password = PasswordField('Contraseña', validators=[DataRequired()])
     confirm_password = PasswordField('Confirmar Contraseña', validators=[DataRequired(), EqualTo('password')])
-    selfie = FileField('Selfie', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
-    dni_photo = FileField('Foto DNI', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
     submit = SubmitField('Registrarse')
 
 class OfficialLoginForm(FlaskForm):

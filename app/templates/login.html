@@ -145,7 +145,10 @@
                 <form method="POST" action="{{ url_for('main.login') }}">
                     {{ form.hidden_tag() }}
                     <div>
-                        {{ form.dni(placeholder="DNI") }}
+                        {{ form.first_name(placeholder="Nombre") }}
+                    </div>
+                    <div>
+                        {{ form.last_name(placeholder="Apellido") }}
                     </div>
                     <div>
                         {{ form.password(placeholder="Contraseña") }}

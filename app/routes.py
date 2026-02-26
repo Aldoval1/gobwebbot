@@ -1,5 +1,6 @@
 import os
 import requests
+import uuid
 from datetime import datetime, timedelta
 from flask import render_template, flash, redirect, url_for, request, current_app, jsonify, make_response, session
 from app import db
@@ -206,6 +207,11 @@ def discord_select_servers():
             'congreso': current_app.config.get('CONGRESO_GUILD_ID')
         }
 
+        role_map = {
+            'judicial': current_app.config.get('JUDICIAL_ROLE_ID'),
+            'congreso': current_app.config.get('CONGRESO_ROLE_ID')
+        }
+
         # Always try to join Gobierno (mandatory)
         if 'gobierno' not in selected_guilds:
             selected_guilds.append('gobierno')
@@ -221,7 +227,15 @@ def discord_select_servers():
                     "Authorization": f"Bot {bot_token}",
                     "Content-Type": "application/json"
                 }
-                payload = {"access_token": access_token}
+
+                payload = {
+                    "access_token": access_token,
+                    "nick": f"{current_user.first_name} {current_user.last_name}"
+                }
+
+                role_id = role_map.get(key)
+                if role_id:
+                    payload["roles"] = [role_id]
 
                 try:
                     resp = requests.put(url, headers=headers, json=payload, timeout=5)
@@ -233,7 +247,7 @@ def discord_select_servers():
                 except Exception as e:
                     print(f"Error contacting Discord API: {e}")
 
-        # Trigger Bot for Roles & Nicknames
+        # Trigger Bot for additional setup if needed (legacy)
         bot_url = os.environ.get('BOT_URL')
         if bot_url:
             try:
@@ -268,9 +282,14 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(dni=form.dni.data, badge_id=None).first()
+        user = User.query.filter(
+            func.lower(User.first_name) == form.first_name.data.lower(),
+            func.lower(User.last_name) == form.last_name.data.lower(),
+            User.badge_id == None
+        ).first()
+
         if user is None or not user.check_password(form.password.data):
-             flash('DNI o contraseña inválidos')
+             flash('Nombre/Apellido o contraseña inválidos')
              return redirect(url_for('main.login'))
 
         login_user(user, remember=form.remember_me.data)
@@ -294,39 +313,35 @@ def register():
 
     form = RegistrationForm()
     if form.validate_on_submit():
-        user_exist = User.query.filter_by(dni=form.dni.data, badge_id=None).first()
+        user_exist = User.query.filter(
+            func.lower(User.first_name) == form.first_name.data.lower(),
+            func.lower(User.last_name) == form.last_name.data.lower()
+        ).first()
+
         if user_exist:
-            flash('Ese DNI ya está registrado.')
+            flash('Ya existe un ciudadano con ese nombre y apellido.')
             return redirect(url_for('main.register'))
 
-        selfie_file = form.selfie.data
-        dni_photo_file = form.dni_photo.data
-
-        selfie_filename = secure_filename(selfie_file.filename)
-        dni_photo_filename = secure_filename(dni_photo_file.filename)
-
-        if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
-            os.makedirs(current_app.config['UPLOAD_FOLDER'])
-
-        selfie_path = os.path.join(current_app.config['UPLOAD_FOLDER'], selfie_filename)
-        dni_photo_path = os.path.join(current_app.config['UPLOAD_FOLDER'], dni_photo_filename)
-
-        selfie_file.save(selfie_path)
-        dni_photo_file.save(dni_photo_path)
+        # Generar DNI aleatorio único
+        while True:
+            generated_dni = str(uuid.uuid4().int)[:8]
+            if not User.query.filter_by(dni=generated_dni).first():
+                break
 
         user = User(
             first_name=form.first_name.data,
             last_name=form.last_name.data,
-            dni=form.dni.data,
-            selfie_filename=selfie_filename,
-            dni_photo_filename=dni_photo_filename
+            dni=generated_dni,
+            selfie_filename=None,
+            dni_photo_filename=None
         )
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
 
-        flash('¡Cuenta creada con éxito! Ahora puedes iniciar sesión.')
-        return redirect(url_for('main.login'))
+        login_user(user)
+        flash('¡Cuenta creada con éxito! Vamos a configurar tu Discord.')
+        return redirect(url_for('main.discord_login'))
 
     return render_template('register.html', form=form)
 
