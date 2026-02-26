@@ -14,7 +14,7 @@ from app.models import (
     CriminalRecordSubjectPhoto, CriminalRecordEvidencePhoto,
     Appointment, Business, BusinessFine, Document as DocModel
 )
-from sqlalchemy import func
+from sqlalchemy import func, text, inspect
 from flask_login import current_user, login_user, logout_user, login_required
 from flask import Blueprint
 from werkzeug.utils import secure_filename
@@ -53,7 +53,77 @@ def notify_discord_bot(user, message):
     except Exception as e:
         print(f"Error enviando notificación a Discord: {e}")
 
+def _cleanup_financial_records(user_id):
+    """
+    Dynamically inspects and cleans up legacy financial tables (like bank_account)
+    and their dependencies to prevent Foreign Key errors during user deletion.
+    """
+    try:
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+
+        # Only proceed if bank_account table exists
+        if 'bank_account' not in tables:
+            return
+
+        # 0. Get Bank Account IDs first to avoid complex subqueries and debug matches
+        ba_ids_result = db.session.execute(text("SELECT id FROM bank_account WHERE user_id = :uid"), {'uid': user_id})
+        ba_ids = [row[0] for row in ba_ids_result]
+
+        current_app.logger.info(f"Found bank_account IDs for user {user_id}: {ba_ids}")
+
+        if not ba_ids:
+            return
+
+        # 1. Find and clear dependencies of bank_account (e.g., transactions)
+        # We need to find all tables that have a Foreign Key pointing to 'bank_account'
+        for table_name in tables:
+            try:
+                fks = inspector.get_foreign_keys(table_name)
+                for fk in fks:
+                    if fk.get('referred_table') == 'bank_account':
+                        # Found a dependency!
+                        constrained_cols = fk.get('constrained_columns')
+                        referred_cols = fk.get('referred_columns')
+
+                        if constrained_cols and referred_cols:
+                            child_col = constrained_cols[0]
+
+                            # Use tuples for IN clause if multiple IDs
+                            if len(ba_ids) == 1:
+                                ids_str = str(ba_ids[0])
+                            else:
+                                ids_str = ', '.join(map(str, ba_ids))
+
+                            current_app.logger.info(f"Cleaning dependency: {table_name}.{child_col} -> bank_account ({ids_str})")
+
+                            # Direct DELETE using IDs
+                            query = text(f"DELETE FROM {table_name} WHERE {child_col} IN ({ids_str})")
+                            result = db.session.execute(query)
+                            current_app.logger.info(f"Deleted {result.rowcount} rows from {table_name}")
+                            db.session.flush()
+
+            except Exception as e:
+                current_app.logger.error(f"Error inspecting/cleaning table {table_name}: {e}")
+
+        # 2. Finally, delete the bank_account records themselves
+        current_app.logger.info(f"Deleting bank_account records for user {user_id}")
+        if len(ba_ids) == 1:
+             ids_str = str(ba_ids[0])
+        else:
+             ids_str = ', '.join(map(str, ba_ids))
+
+        result = db.session.execute(text(f"DELETE FROM bank_account WHERE id IN ({ids_str})"))
+        current_app.logger.info(f"Deleted {result.rowcount} bank_account rows")
+        db.session.flush()
+
+    except Exception as e:
+        current_app.logger.warning(f"Failed to clean up financial records for user {user_id}: {e}")
+
 def _perform_user_deletion(user):
+    # 0. Clean up potential orphaned financial records (from removed system)
+    _cleanup_financial_records(user.id)
+
     # 1. Nullify author_id in related records to avoid deletion or integrity errors
     TrafficFine.query.filter_by(author_id=user.id).update({TrafficFine.author_id: None})
     CriminalRecord.query.filter_by(author_id=user.id).update({CriminalRecord.author_id: None})
