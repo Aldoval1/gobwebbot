@@ -14,7 +14,7 @@ from app.models import (
     CriminalRecordSubjectPhoto, CriminalRecordEvidencePhoto,
     Appointment, Business, Document as DocModel
 )
-from sqlalchemy import func
+from sqlalchemy import func, text
 from flask_login import current_user, login_user, logout_user, login_required
 from flask import Blueprint
 from werkzeug.utils import secure_filename
@@ -54,6 +54,13 @@ def notify_discord_bot(user, message):
         print(f"Error enviando notificación a Discord: {e}")
 
 def _perform_user_deletion(user):
+    # 0. Clean up potential orphaned financial records (from removed system)
+    try:
+        # Delete related bank accounts (raw SQL as model was removed)
+        db.session.execute(text("DELETE FROM bank_account WHERE user_id = :uid"), {'uid': user.id})
+    except Exception as e:
+        print(f"Warning cleaning financial records for user {user.id}: {e}")
+
     # 1. Nullify author_id in related records to avoid deletion or integrity errors
     TrafficFine.query.filter_by(author_id=user.id).update({TrafficFine.author_id: None})
     CriminalRecord.query.filter_by(author_id=user.id).update({CriminalRecord.author_id: None})
