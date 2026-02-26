@@ -223,6 +223,33 @@
                                 </div>
                             </div>
 
+                            <!-- HISTORIAL DE MULTAS -->
+                            <div class="mb-3">
+                                <h6>Historial de Sanciones</h6>
+                                {% if bus.fines.count() > 0 %}
+                                    <ul class="list-group list-group-flush" style="max-height: 150px; overflow-y: auto;">
+                                    {% for fine in bus.fines %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div style="line-height: 1.2;">
+                                                <small><strong>{{ fine.reason }}</strong></small><br>
+                                                <small class="text-muted">{{ fine.date.strftime('%d/%m') }} - {{ fine.author.last_name }}</small>
+                                            </div>
+                                            {% if fine.status == 'Pendiente' %}
+                                                <form action="{{ url_for('main.pay_business_fine', business_id=bus.id, fine_id=fine.id) }}" method="POST">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                    <button type="submit" class="btn btn-xs btn-success py-0" style="font-size: 0.75rem;">Marcar Pagada</button>
+                                                </form>
+                                            {% else %}
+                                                <span class="badge bg-secondary" style="font-size: 0.7rem;">Pagada</span>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-muted small">No hay sanciones registradas.</p>
+                                {% endif %}
+                            </div>
+
                             <h6>Licencias</h6>
                             <ul class="list-group list-group-flush">
                                 {% for lic in bus.licenses %}
