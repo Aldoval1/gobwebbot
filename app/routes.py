@@ -130,6 +130,23 @@ def link_discord_api():
     
     return jsonify({'success': False, 'message': 'Usuario no encontrado'}), 404
 
+@bp.route('/api/search_users', methods=['GET'])
+@login_required
+def api_search_users():
+    query = request.args.get('q', '')
+    if not query or len(query) < 2:
+        return jsonify([])
+
+    search = f"%{query}%"
+    users = User.query.filter(
+        (User.first_name.ilike(search)) |
+        (User.last_name.ilike(search)) |
+        (User.dni.ilike(search))
+    ).limit(10).all()
+
+    results = [{'dni': u.dni, 'name': f"{u.first_name} {u.last_name}"} for u in users]
+    return jsonify(results)
+
 # --- DISCORD OAUTH2 ROUTES ---
 
 @bp.route('/discord/login')
