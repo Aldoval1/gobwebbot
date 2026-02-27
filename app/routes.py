@@ -1,6 +1,5 @@
 import os
 import requests
-import uuid
 from datetime import datetime, timedelta
 from flask import render_template, flash, redirect, url_for, request, current_app, jsonify, make_response, session
 from app import db
@@ -282,14 +281,9 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter(
-            func.lower(User.first_name) == form.first_name.data.lower(),
-            func.lower(User.last_name) == form.last_name.data.lower(),
-            User.badge_id == None
-        ).first()
-
+        user = User.query.filter_by(dni=form.dni.data, badge_id=None).first()
         if user is None or not user.check_password(form.password.data):
-             flash('Nombre/Apellido o contraseña inválidos')
+             flash('DNI o contraseña inválidos')
              return redirect(url_for('main.login'))
 
         login_user(user, remember=form.remember_me.data)
@@ -313,27 +307,32 @@ def register():
 
     form = RegistrationForm()
     if form.validate_on_submit():
-        user_exist = User.query.filter(
-            func.lower(User.first_name) == form.first_name.data.lower(),
-            func.lower(User.last_name) == form.last_name.data.lower()
-        ).first()
-
+        user_exist = User.query.filter_by(dni=form.dni.data, badge_id=None).first()
         if user_exist:
-            flash('Ya existe un ciudadano con ese nombre y apellido.')
+            flash('Ese DNI ya está registrado.')
             return redirect(url_for('main.register'))
 
-        # Generar DNI aleatorio único
-        while True:
-            generated_dni = str(uuid.uuid4().int)[:8]
-            if not User.query.filter_by(dni=generated_dni).first():
-                break
+        selfie_file = form.selfie.data
+        dni_photo_file = form.dni_photo.data
+
+        selfie_filename = secure_filename(selfie_file.filename)
+        dni_photo_filename = secure_filename(dni_photo_file.filename)
+
+        if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
+            os.makedirs(current_app.config['UPLOAD_FOLDER'])
+
+        selfie_path = os.path.join(current_app.config['UPLOAD_FOLDER'], selfie_filename)
+        dni_photo_path = os.path.join(current_app.config['UPLOAD_FOLDER'], dni_photo_filename)
+
+        selfie_file.save(selfie_path)
+        dni_photo_file.save(dni_photo_path)
 
         user = User(
             first_name=form.first_name.data,
             last_name=form.last_name.data,
-            dni=generated_dni,
-            selfie_filename=None,
-            dni_photo_filename=None
+            dni=form.dni.data,
+            selfie_filename=selfie_filename,
+            dni_photo_filename=dni_photo_filename
         )
         user.set_password(form.password.data)
         db.session.add(user)

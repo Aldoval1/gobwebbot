@@ -1,0 +1,24 @@
+🔄 Verificando estado de la Base de Datos...
+✅ Tablas verificadas.
+🚀 Creando Usuario Admin (000/000)...
+✅ Usuario Admin creado exitosamente.
+✨ Inicialización completada.
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 410-907-091
+127.0.0.1 - - [27/Feb/2026 01:47:47] "GET /register HTTP/1.1" 200 -
+ * Detected change in '/app/verify_frontend_restore.py', reloading
+🔄 Verificando estado de la Base de Datos...
+✅ Tablas verificadas.
+✨ Inicialización completada.
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 410-907-091
+127.0.0.1 - - [27/Feb/2026 01:48:17] "GET /register HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 01:48:18] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 01:48:18] "GET /static/img/logo.png HTTP/1.1" 200 -
