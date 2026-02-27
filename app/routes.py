@@ -191,6 +191,7 @@ def _perform_user_deletion(user):
 
     # 1. Nullify author_id in related records to avoid deletion or integrity errors
     TrafficFine.query.filter_by(author_id=user.id).update({TrafficFine.author_id: None})
+    BusinessFine.query.filter_by(author_id=user.id).update({BusinessFine.author_id: None})
     CriminalRecord.query.filter_by(author_id=user.id).update({CriminalRecord.author_id: None})
     Comment.query.filter_by(author_id=user.id).update({Comment.author_id: None})
     DocModel.query.filter_by(uploader_id=user.id).update({DocModel.uploader_id: None})
@@ -1017,7 +1018,7 @@ def official_action(user_id, action):
         target_user.official_status = 'Aprobado'
         flash(f'Usuario {target_user.first_name} {target_user.last_name} aprobado.')
     elif action == 'deny':
-        db.session.delete(target_user)
+        _perform_user_deletion(target_user)
         flash(f'Usuario {target_user.first_name} {target_user.last_name} denegado y eliminado.')
 
     db.session.commit()
