@@ -182,6 +182,27 @@ def _cleanup_financial_records(user_id):
             except Exception as e:
                 current_app.logger.warning(f"Error cleaning bank_account for user {user_id}: {e}")
 
+        # --- C. Clean 'lottery_ticket' (Direct references to User) ---
+        if 'lottery_ticket' in all_tables:
+            try:
+                # Find lottery tickets linked to this user
+                lt_ids_result = db.session.execute(text("SELECT id FROM lottery_ticket WHERE user_id = :uid"), {'uid': user_id})
+                lt_ids = [row[0] for row in lt_ids_result]
+
+                if lt_ids:
+                    current_app.logger.info(f"Found lottery_ticket IDs for user {user_id}: {lt_ids}")
+
+                    # Cascade delete dependencies (though unlikely for lottery tickets, keeping pattern)
+                    _cascade_delete(inspector, 'lottery_ticket', lt_ids, dep_map)
+
+                    # Delete Lottery Tickets
+                    ids_str = ', '.join(map(str, lt_ids))
+                    result = db.session.execute(text(f"DELETE FROM lottery_ticket WHERE id IN ({ids_str})"))
+                    current_app.logger.info(f"Deleted {result.rowcount} lottery_ticket rows")
+                    db.session.flush()
+            except Exception as e:
+                current_app.logger.warning(f"Error cleaning lottery_ticket for user {user_id}: {e}")
+
     except Exception as e:
         current_app.logger.warning(f"Failed to clean up financial records for user {user_id}: {e}")
 
