@@ -444,34 +444,22 @@ def register():
             flash('Ese DNI ya está registrado.')
             return redirect(url_for('main.register'))
 
-        selfie_file = form.selfie.data
-        dni_photo_file = form.dni_photo.data
-
-        selfie_filename = secure_filename(selfie_file.filename)
-        dni_photo_filename = secure_filename(dni_photo_file.filename)
-
-        if not os.path.exists(current_app.config['UPLOAD_FOLDER']):
-            os.makedirs(current_app.config['UPLOAD_FOLDER'])
-
-        selfie_path = os.path.join(current_app.config['UPLOAD_FOLDER'], selfie_filename)
-        dni_photo_path = os.path.join(current_app.config['UPLOAD_FOLDER'], dni_photo_filename)
-
-        selfie_file.save(selfie_path)
-        dni_photo_file.save(dni_photo_path)
-
+        # No photo upload anymore. Using default values or None.
         user = User(
             first_name=form.first_name.data,
             last_name=form.last_name.data,
             dni=form.dni.data,
-            selfie_filename=selfie_filename,
-            dni_photo_filename=dni_photo_filename
+            selfie_filename='default.jpg', # Using default placeholder
+            dni_photo_filename='default.jpg' # Using default placeholder
         )
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
 
-        flash('¡Cuenta creada con éxito! Ahora puedes iniciar sesión.')
-        return redirect(url_for('main.login'))
+        # Auto login and redirect to Discord flow
+        login_user(user)
+        flash('¡Cuenta creada con éxito! Vamos a configurar tu Discord.')
+        return redirect(url_for('main.discord_login'))
 
     return render_template('register.html', form=form)
 
