@@ -1,5 +1,7 @@
 🔄 Verificando estado de la Base de Datos...
 ✅ Tablas verificadas.
+⚠️ Columna 'status' faltante en tabla 'business'. Agregando...
+✅ Columna 'status' agregada a Business.
 ✨ Inicialización completada.
  * Serving Flask app 'app'
  * Debug mode: on
@@ -9,10 +11,4 @@
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 410-907-091
-127.0.0.1 - - [20/Feb/2026 00:20:04] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [20/Feb/2026 00:20:05] "GET /static/img/logo.png HTTP/1.1" 200 -
-127.0.0.1 - - [20/Feb/2026 00:20:06] "GET /official/safinder HTTP/1.1" 200 -
-127.0.0.1 - - [20/Feb/2026 00:20:07] "GET /official/login HTTP/1.1" 200 -
-127.0.0.1 - - [20/Feb/2026 00:20:07] "[32mPOST /official/login HTTP/1.1[0m" 302 -
-127.0.0.1 - - [20/Feb/2026 00:20:07] "GET /official/dashboard HTTP/1.1" 200 -
-127.0.0.1 - - [20/Feb/2026 00:20:07] "GET /official/safinder HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 02:00:51] "GET /register HTTP/1.1" 200 -

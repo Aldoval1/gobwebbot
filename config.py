@@ -28,8 +28,8 @@ class Config:
     DISCORD_BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
 
     GOBIERNO_GUILD_ID = os.environ.get('GOBIERNO_GUILD_ID') or os.environ.get('GUILD_ID') # Fallback to existing
-    JUDICIAL_GUILD_ID = os.environ.get('JUDICIAL_GUILD_ID')
-    CONGRESO_GUILD_ID = os.environ.get('CONGRESO_GUILD_ID')
+    JUDICIAL_GUILD_ID = os.environ.get('JUDICIAL_GUILD_ID') or '1451589869397737625'
+    CONGRESO_GUILD_ID = os.environ.get('CONGRESO_GUILD_ID') or '1461529761783353347'
 
     JUDICIAL_ROLE_ID = os.environ.get('JUDICIAL_ROLE_ID') or '1473865577993994260'
     CONGRESO_ROLE_ID = os.environ.get('CONGRESO_ROLE_ID') or '1473835075375337740'

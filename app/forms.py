@@ -16,8 +16,6 @@ class RegistrationForm(FlaskForm):
     dni = StringField('DNI', validators=[DataRequired()])
     password = PasswordField('Contraseña', validators=[DataRequired()])
     confirm_password = PasswordField('Confirmar Contraseña', validators=[DataRequired(), EqualTo('password')])
-    selfie = FileField('Selfie', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
-    dni_photo = FileField('Foto DNI', validators=[FileRequired(), FileAllowed(['jpg', 'png', 'jpeg'], 'Solo imágenes')])
     submit = SubmitField('Registrarse')
 
 class OfficialLoginForm(FlaskForm):
