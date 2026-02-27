@@ -109,7 +109,8 @@ class BusinessLicenseForm(FlaskForm):
         ('Groceries', 'Verdulería'),
         ('Hardware', 'Ferretería'),
         ('Barber', 'Barbería'),
-        ('Clothes', 'Tienda de Ropa')
+        ('Clothes', 'Tienda de Ropa'),
+        ('PawnShop', 'Empeno')
     ], validators=[DataRequired()])
     location_x = FloatField('Pos X', validators=[DataRequired()])
     location_y = FloatField('Pos Y', validators=[DataRequired()])
