@@ -134,36 +134,53 @@ def _cascade_delete(inspector, table_name, id_list, dep_map):
 
 def _cleanup_financial_records(user_id):
     """
-    Dynamically inspects and cleans up legacy financial tables (like bank_account)
-    and their dependencies recursively.
+    Dynamically inspects and cleans up legacy financial tables (bank_account, payroll_item)
+    and their dependencies recursively to prevent Foreign Key errors.
     """
     try:
         inspector = inspect(db.engine)
-        tables = inspector.get_table_names()
-
-        if 'bank_account' not in tables:
-            return
-
-        # 0. Get Bank Account IDs
-        ba_ids_result = db.session.execute(text("SELECT id FROM bank_account WHERE user_id = :uid"), {'uid': user_id})
-        ba_ids = [row[0] for row in ba_ids_result]
-
-        current_app.logger.info(f"Found bank_account IDs for user {user_id}: {ba_ids}")
-
-        if not ba_ids:
-            return
-
-        # 1. Build Map
+        all_tables = inspector.get_table_names()
         dep_map = _build_dependency_map(inspector)
 
-        # 2. Cascade Delete Dependencies
-        _cascade_delete(inspector, 'bank_account', ba_ids, dep_map)
+        # --- A. Clean 'payroll_item' (Direct references to User) ---
+        if 'payroll_item' in all_tables:
+            try:
+                # Find payroll items linked to this user
+                # Assuming 'user_id' is the column name based on the error "payroll_item_user_id_fkey"
+                pi_ids_res = db.session.execute(text("SELECT id FROM payroll_item WHERE user_id = :uid"), {'uid': user_id})
+                pi_ids = [row[0] for row in pi_ids_res]
 
-        # 3. Delete Bank Accounts
-        ids_str = ', '.join(map(str, ba_ids))
-        result = db.session.execute(text(f"DELETE FROM bank_account WHERE id IN ({ids_str})"))
-        current_app.logger.info(f"Deleted {result.rowcount} bank_account rows")
-        db.session.flush()
+                if pi_ids:
+                    current_app.logger.info(f"Found payroll_item IDs for user {user_id}: {pi_ids}")
+                    # Cascade delete dependents of these payroll items
+                    _cascade_delete(inspector, 'payroll_item', pi_ids, dep_map)
+
+                    # Delete the items themselves
+                    ids_str = ', '.join(map(str, pi_ids))
+                    result = db.session.execute(text(f"DELETE FROM payroll_item WHERE id IN ({ids_str})"))
+                    current_app.logger.info(f"Deleted {result.rowcount} payroll_item rows")
+                    db.session.flush()
+            except Exception as e:
+                current_app.logger.warning(f"Error cleaning payroll_item for user {user_id}: {e}")
+
+        # --- B. Clean 'bank_account' (Direct references to User) ---
+        if 'bank_account' in all_tables:
+            try:
+                ba_ids_result = db.session.execute(text("SELECT id FROM bank_account WHERE user_id = :uid"), {'uid': user_id})
+                ba_ids = [row[0] for row in ba_ids_result]
+
+                if ba_ids:
+                    current_app.logger.info(f"Found bank_account IDs for user {user_id}: {ba_ids}")
+                    # Cascade delete dependencies
+                    _cascade_delete(inspector, 'bank_account', ba_ids, dep_map)
+
+                    # Delete Bank Accounts
+                    ids_str = ', '.join(map(str, ba_ids))
+                    result = db.session.execute(text(f"DELETE FROM bank_account WHERE id IN ({ids_str})"))
+                    current_app.logger.info(f"Deleted {result.rowcount} bank_account rows")
+                    db.session.flush()
+            except Exception as e:
+                current_app.logger.warning(f"Error cleaning bank_account for user {user_id}: {e}")
 
     except Exception as e:
         current_app.logger.warning(f"Failed to clean up financial records for user {user_id}: {e}")
