@@ -728,61 +728,88 @@ def licenses():
     if current_user.badge_id:
         return redirect(url_for('main.official_dashboard'))
 
-    # Precios de licencias personales (Ahora Gratis)
-    personal_license_prices = {
-        'Pilot': 0,
-        'Stripping': 0
-    }
-    
-    license_names = {
-        'Pilot': 'Licencia de Piloto',
-        'Stripping': 'Licencia de Stripping'
+    # Diccionario con tipos y precios de licencias
+    PERSONAL_LICENSES = {
+        'aviation': {'name': 'Credencial Oficial de Aviación y Pilotaje', 'price': 8000},
+        'fishing': {'name': 'Concesión de Explotación Pesquera Comercial', 'price': 4500},
+        'mining': {'name': 'Permiso de Extracción y Minería Comercial', 'price': 6500},
+        'mechanic': {'name': 'Certificación de Servicios Automotrices y Taller Mecánico', 'price': 6000},
+        'stripping': {'name': 'Permiso de Baile Exótico', 'price': 4000}
     }
 
     business_form = BusinessLicenseForm()
 
+    # Obtener todas las licencias del usuario
+    # Usamos .all() para tener la lista y poder iterar varias veces sin re-ejecutar query
+    user_licenses = current_user.licenses.all()
+
     # Check for expired licenses
     expired_count = 0
-    for lic in current_user.licenses:
+    for lic in user_licenses:
         if lic.status == 'Activa' and lic.expiration_date and lic.expiration_date < datetime.utcnow().date():
             lic.status = 'Vencida'
             expired_count += 1
 
     if expired_count > 0:
-        db.session.commit()
+        db.session.commit() # Commit para guardar el cambio de estado a Vencida
         flash(f'¡Atención! Tienes {expired_count} licencia(s) vencida(s). Renuevalas cuanto antes.', 'warning')
 
     if request.method == 'POST':
-        # --- Lógica de Compra de Licencias Personales ---
+        # --- Lógica de Solicitud de Licencias Personales ---
         if 'licenses' in request.form:
-            selected_licenses = request.form.getlist('licenses')
-            if not selected_licenses:
+            selected_keys = request.form.getlist('licenses')
+            if not selected_keys:
                 flash('No seleccionaste ninguna licencia.')
                 return redirect(url_for('main.licenses'))
 
-            valid_licenses = []
-            for lic in selected_licenses:
-                if lic in personal_license_prices:
-                    valid_licenses.append(lic)
+            count_added = 0
+            for key in selected_keys:
+                if key in PERSONAL_LICENSES:
+                    lic_info = PERSONAL_LICENSES[key]
 
-            # status='Pendiente', expiration_date=None until approved
-            for lic in valid_licenses:
-                new_license = License(
-                    type=license_names.get(lic, lic),
-                    status='Pendiente',
-                    issue_date=None,
-                    expiration_date=None,
-                    user_id=current_user.id
-                )
-                db.session.add(new_license)
+                    # Verificar si ya tiene una pendiente o activa de este tipo para evitar duplicados
+                    # (Opcional, pero buena práctica)
+                    existing = next((l for l in user_licenses if l.type == lic_info['name'] and l.status in ['Pendiente', 'Activa']), None)
 
-            db.session.commit()
-            flash(f'Solicitud de licencias enviada. Espera la aprobación de un agente del SABES.')
+                    if not existing:
+                        new_license = License(
+                            type=lic_info['name'],
+                            status='Pendiente',
+                            issue_date=None,
+                            expiration_date=None,
+                            user_id=current_user.id
+                        )
+                        db.session.add(new_license)
+                        count_added += 1
+
+            if count_added > 0:
+                db.session.commit()
+                flash(f'Solicitud de {count_added} licencia(s) enviada. Espera la aprobación de un agente del SABES.')
+            else:
+                flash('No se añadieron licencias (posiblemente ya tenías solicitudes pendientes o activas).')
+
             return redirect(url_for('main.licenses'))
 
+    # Calcular deuda pendiente
+    pending_debt = 0
+    pending_breakdown = []
+
+    # Mapa inverso: Nombre Licencia -> Precio
+    name_to_price = {v['name']: v['price'] for k, v in PERSONAL_LICENSES.items()}
+
+    for lic in user_licenses:
+        if lic.status == 'Pendiente' and lic.business_id is None:
+            # Intentar obtener precio del diccionario
+            price = name_to_price.get(lic.type, 0)
+            if price > 0:
+                pending_debt += price
+                pending_breakdown.append({'type': lic.type, 'price': price})
+
     return render_template('licenses.html', 
-                           personal_prices=personal_license_prices,
-                           active_licenses=current_user.licenses,
+                           personal_licenses=PERSONAL_LICENSES,
+                           active_licenses=user_licenses,
+                           pending_debt=pending_debt,
+                           pending_breakdown=pending_breakdown,
                            business_form=business_form)
 
 @bp.route('/licenses/business/register', methods=['POST'])
