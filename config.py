@@ -27,7 +27,7 @@ class Config:
     # Discord Guilds & Roles
     DISCORD_BOT_TOKEN = os.environ.get('DISCORD_TOKEN')
 
-    GOBIERNO_GUILD_ID = os.environ.get('GOBIERNO_GUILD_ID') or os.environ.get('GUILD_ID') # Fallback to existing
+    GOBIERNO_GUILD_ID = os.environ.get('GOBIERNO_GUILD_ID') or '1407095652718215480'
     JUDICIAL_GUILD_ID = os.environ.get('JUDICIAL_GUILD_ID') or '1451589869397737625'
     CONGRESO_GUILD_ID = os.environ.get('CONGRESO_GUILD_ID') or '1461529761783353347'
 
