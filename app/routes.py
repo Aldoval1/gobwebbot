@@ -1047,42 +1047,34 @@ def government_users():
     users = User.query.all()
     return render_template('government_users.html', users=users)
 
-@bp.route('/government/users/bulk_action', methods=['POST'])
+@bp.route('/government/users/<int:user_id>/unlink', methods=['POST'])
 @login_required
-def government_users_bulk_action():
+def government_user_unlink(user_id):
     if current_user.department != 'Gobierno':
         flash('Acceso denegado.')
         return redirect(url_for('main.official_dashboard'))
 
-    action = request.form.get('action')
-    user_ids = request.form.getlist('user_ids')
+    user = User.query.get_or_404(user_id)
+    user.discord_id = None
+    db.session.commit()
+    flash(f'Discord desvinculado para {user.first_name} {user.last_name}.')
+    return redirect(url_for('main.government_users'))
 
-    if not user_ids:
-        flash('No seleccionaste ningún usuario.')
+@bp.route('/government/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+def government_user_delete(user_id):
+    if current_user.department != 'Gobierno':
+        flash('Acceso denegado.')
+        return redirect(url_for('main.official_dashboard'))
+
+    user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash('No puedes eliminar tu propia cuenta desde aquí.')
         return redirect(url_for('main.government_users'))
 
-    count = 0
-
-    if action == 'unlink_discord':
-        for uid in user_ids:
-            u = User.query.get(uid)
-            if u:
-                u.discord_id = None
-                count += 1
-        db.session.commit()
-        flash(f'Discord desvinculado de {count} usuarios.')
-
-    elif action == 'delete':
-        for uid in user_ids:
-            u = User.query.get(uid)
-            if u:
-                if u.id == current_user.id:
-                    continue # Skip self
-                _perform_user_deletion(u)
-                count += 1
-        db.session.commit()
-        flash(f'{count} usuarios eliminados permanentemente.')
-
+    _perform_user_deletion(user)
+    db.session.commit()
+    flash(f'Usuario {user.first_name} {user.last_name} eliminado permanentemente.')
     return redirect(url_for('main.government_users'))
 
 @bp.route('/official/kick_member/<int:user_id>', methods=['POST'])
