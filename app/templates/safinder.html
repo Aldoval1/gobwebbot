@@ -72,7 +72,13 @@
                 </div>
 
                 {% if results %}
-                    <h4 class="mb-3">Resultados ({{ results|length }})</h4>
+                    <h4 class="mb-3">
+                        {% if request.args.get('q') %}
+                            Resultados de búsqueda ({{ results|length }})
+                        {% else %}
+                            Todos los Documentos ({{ results|length }})
+                        {% endif %}
+                    </h4>
                     {% for doc in results %}
                     <div class="result-card">
                         <div class="d-flex justify-content-between">
@@ -92,7 +98,16 @@
                             {{ doc.text_content[:300] }}...
                         </div>
 
-                        <a href="{{ url_for('static', filename='img/docs/' + doc.filename) }}" target="_blank" class="btn btn-sm btn-outline-primary">📄 Ver PDF Original</a>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{{ url_for('static', filename='img/docs/' + doc.filename) }}" target="_blank" class="btn btn-sm btn-outline-primary">📄 Ver PDF Original</a>
+
+                            {% if current_user.is_authenticated and current_user.badge_id %}
+                            <form action="{{ url_for('main.safinder_delete', doc_id=doc.id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este documento? Esta acción no se puede deshacer.');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                <button type="submit" class="btn btn-sm btn-danger">🗑️ Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </div>
                     {% endfor %}
                 {% elif request.args.get('q') %}

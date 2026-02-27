@@ -1,7 +1,7 @@
 🔄 Verificando estado de la Base de Datos...
 ✅ Tablas verificadas.
-⚠️ Columna 'status' faltante en tabla 'business'. Agregando...
-✅ Columna 'status' agregada a Business.
+🚀 Creando Usuario Admin (000/000)...
+✅ Usuario Admin creado exitosamente.
 ✨ Inicialización completada.
  * Serving Flask app 'app'
  * Debug mode: on
@@ -11,19 +11,27 @@
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 410-907-091
-127.0.0.1 - - [27/Feb/2026 02:00:51] "GET /register HTTP/1.1" 200 -
- * Detected change in '/app/config.py', reloading
-🔄 Verificando estado de la Base de Datos...
-✅ Tablas verificadas.
-✨ Inicialización completada.
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 410-907-091
- * Detected change in '/app/bot/main.py', reloading
-🔄 Verificando estado de la Base de Datos...
-✅ Tablas verificadas.
-✨ Inicialización completada.
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 410-907-091
-127.0.0.1 - - [27/Feb/2026 02:42:28] "GET /register HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:30:04] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:30:04] "GET /static/img/logo.png HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:30:05] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 04:30:05] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:30:05] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [27/Feb/2026 04:30:59] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:30:59] "GET /static/img/logo.png HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:30:59] "[32mPOST /login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 04:30:59] "GET /login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:30:59] "[36mGET /static/img/logo.png HTTP/1.1[0m" 304 -
+127.0.0.1 - - [27/Feb/2026 04:31:40] "GET /official/login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:32:30] "GET /official/login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:32:31] "[32mPOST /official/login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 04:32:31] "GET /official/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:32:31] "GET /official/safinder HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:33:02] "GET /official/login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:33:03] "[32mPOST /official/login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 04:33:03] "GET /official/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:33:03] "GET /official/safinder HTTP/1.1" 200 -
+EOF marker not found
+127.0.0.1 - - [27/Feb/2026 04:33:03] "[32mPOST /official/safinder/upload HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 04:33:03] "GET /official/safinder HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 04:33:03] "[32mPOST /official/safinder/delete/1 HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 04:33:03] "GET /official/safinder HTTP/1.1" 200 -
