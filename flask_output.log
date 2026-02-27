@@ -12,3 +12,18 @@
  * Debugger is active!
  * Debugger PIN: 410-907-091
 127.0.0.1 - - [27/Feb/2026 02:00:51] "GET /register HTTP/1.1" 200 -
+ * Detected change in '/app/config.py', reloading
+🔄 Verificando estado de la Base de Datos...
+✅ Tablas verificadas.
+✨ Inicialización completada.
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 410-907-091
+ * Detected change in '/app/bot/main.py', reloading
+🔄 Verificando estado de la Base de Datos...
+✅ Tablas verificadas.
+✨ Inicialización completada.
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 410-907-091
+127.0.0.1 - - [27/Feb/2026 02:42:28] "GET /register HTTP/1.1" 200 -
