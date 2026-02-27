@@ -1264,7 +1264,6 @@ def safinder():
     # Uploads restricted to officials via template logic and separate upload route
 
     query = request.args.get('q', '')
-    results = []
 
     if query:
         search = f"%{query}%"
@@ -1272,6 +1271,9 @@ def safinder():
             (DocModel.title.ilike(search)) |
             (DocModel.text_content.ilike(search))
         ).order_by(DocModel.created_at.desc()).all()
+    else:
+        # If no search, return all documents ordered by date
+        results = DocModel.query.order_by(DocModel.created_at.desc()).all()
 
     recent_docs = DocModel.query.order_by(DocModel.created_at.desc()).limit(5).all()
 
@@ -1328,6 +1330,29 @@ def safinder_upload():
     else:
         flash('Solo se permiten archivos PDF.')
 
+    return redirect(url_for('main.safinder'))
+
+@bp.route('/official/safinder/delete/<int:doc_id>', methods=['POST'])
+@login_required
+def safinder_delete(doc_id):
+    if not current_user.badge_id:
+        return redirect(url_for('main.citizen_dashboard'))
+
+    doc = DocModel.query.get_or_404(doc_id)
+
+    # Delete physical file
+    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'docs', doc.filename)
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except Exception as e:
+            print(f"Error deleting file {file_path}: {e}")
+
+    # Delete database record
+    db.session.delete(doc)
+    db.session.commit()
+
+    flash('Documento eliminado correctamente.', 'success')
     return redirect(url_for('main.safinder'))
 
 @bp.route('/official/citizen/<int:user_id>/add_traffic_fine', methods=['POST'])
