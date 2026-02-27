@@ -430,7 +430,7 @@ def login():
 
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(dni=form.dni.data, badge_id=None).first()
+        user = User.query.filter_by(dni=form.dni.data).first()
         if user is None or not user.check_password(form.password.data):
              flash('DNI o contraseña inválidos')
              return redirect(url_for('main.login'))
@@ -445,8 +445,7 @@ def login():
 @bp.route('/citizen/dashboard')
 @login_required
 def citizen_dashboard():
-    if current_user.badge_id:
-        return redirect(url_for('main.official_dashboard'))
+    # Officials can access citizen dashboard
     return render_template('citizen_dashboard.html')
 
 @bp.route('/register', methods=['GET', 'POST'])
@@ -456,7 +455,7 @@ def register():
 
     form = RegistrationForm()
     if form.validate_on_submit():
-        user_exist = User.query.filter_by(dni=form.dni.data, badge_id=None).first()
+        user_exist = User.query.filter_by(dni=form.dni.data).first()
         if user_exist:
             flash('Ese DNI ya está registrado.')
             return redirect(url_for('main.register'))
@@ -490,9 +489,7 @@ def logout():
 @bp.route('/my_fines')
 @login_required
 def my_fines():
-    if current_user.badge_id:
-        return redirect(url_for('main.official_dashboard'))
-
+    # Officials can access their fines
     fines = TrafficFine.query.filter_by(user_id=current_user.id, status='Pendiente').all()
     history = TrafficFine.query.filter_by(user_id=current_user.id, status='Pagada').all()
 
@@ -503,9 +500,7 @@ def my_fines():
 @bp.route('/appointments')
 @login_required
 def appointments():
-    if current_user.badge_id:
-        return redirect(url_for('main.official_dashboard'))
-
+    # Officials can book appointments
     officials = User.query.filter_by(department='Gobierno', official_status='Aprobado').all()
     form = AppointmentForm()
 
@@ -547,9 +542,7 @@ def book_appointment(official_id):
 @bp.route('/my_documents')
 @login_required
 def my_documents():
-    if current_user.badge_id:
-        return redirect(url_for('main.official_dashboard'))
-
+    # Officials can view their documents
     if current_user.created_at:
         account_age = (datetime.utcnow() - current_user.created_at).days
     else:
@@ -651,8 +644,7 @@ def download_criminal_record():
 @bp.route('/judicial')
 @login_required
 def judicial():
-    if current_user.badge_id:
-        return redirect(url_for('main.official_dashboard'))
+    # Officials can access judicial templates
     return render_template('judicial.html')
 
 # --- PLANTILLAS ROUTES ---
@@ -747,8 +739,7 @@ BASE_BUSINESS_LICENSE_PRICE = 5500
 @bp.route('/licenses', methods=['GET', 'POST'])
 @login_required
 def licenses():
-    if current_user.badge_id:
-        return redirect(url_for('main.official_dashboard'))
+    # Officials can manage their licenses
 
     # Diccionario con tipos y precios de licencias
     PERSONAL_LICENSES = {
@@ -1065,7 +1056,7 @@ def government_create_leader():
 
     form = CreateLeaderForm()
     if form.validate_on_submit():
-        citizen = User.query.filter_by(dni=form.dni.data, badge_id=None).first()
+        citizen = User.query.filter_by(dni=form.dni.data).first()
         if not citizen:
             flash('El ciudadano no existe (DNI no encontrado). Debe registrarse primero.')
             return redirect(url_for('main.government_dashboard'))
@@ -1074,20 +1065,20 @@ def government_create_leader():
             flash('Esa Placa ID ya está registrada.')
             return redirect(url_for('main.government_dashboard'))
 
-        user = User(
-            first_name=form.first_name.data,
-            last_name=form.last_name.data,
-            dni=form.dni.data,
-            badge_id=form.badge_id.data,
-            department=form.department.data,
-            official_status='Aprobado',
-            official_rank='Lider',
-            selfie_filename='default.jpg',
-            dni_photo_filename='default.jpg'
-        )
-        user.set_password(form.password.data)
+        if citizen.badge_id:
+            flash('El ciudadano ya tiene un cargo oficial asignado.')
+            return redirect(url_for('main.government_dashboard'))
 
-        db.session.add(user)
+        # Update existing citizen instead of creating a new user
+        citizen.badge_id = form.badge_id.data
+        citizen.department = form.department.data
+        citizen.official_status = 'Aprobado'
+        citizen.official_rank = 'Lider'
+        # citizen.selfie_filename and dni_photo_filename are already set on the user
+
+        citizen.set_password(form.password.data)
+
+        # No need to add(citizen) as it's already in session
         db.session.commit()
 
         flash(f'Líder de {form.department.data} creado con éxito.')

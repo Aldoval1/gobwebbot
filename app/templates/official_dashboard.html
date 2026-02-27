@@ -147,7 +147,9 @@
         </div>
         <h1>Gestión de Personal - {{ current_user.department }}</h1>
 
-        <div style="margin-bottom: 20px;">
+        <div style="margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px;">
+            <a href="{{ url_for('main.citizen_dashboard') }}" class="btn" style="background-color: #16a085; color: white; padding: 10px 20px; font-size: 16px;">Ir al Panel Ciudadano</a>
+
             <a href="{{ url_for('main.official_database') }}" class="btn" style="background-color: #3498db; color: white; padding: 10px 20px; font-size: 16px;">Acceder a Base de Datos de Ciudadanos</a>
 
             <a href="{{ url_for('main.safinder') }}" class="btn" style="background-color: #2980b9; color: white; padding: 10px 20px; font-size: 16px;">📂 SA Finder (Documentos)</a>
