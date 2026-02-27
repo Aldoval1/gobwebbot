@@ -1,0 +1,18 @@
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [27/Feb/2026 03:54:27] "GET /official/login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 03:54:28] "[32mPOST /official/login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 03:54:28] "GET /official/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 03:54:56] "GET /official/login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 03:54:57] "[32mPOST /official/login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 03:54:57] "GET /official/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 03:55:17] "GET /official/login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 03:55:18] "[32mPOST /official/login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 03:55:18] "GET /official/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 03:55:38] "GET /official/login HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 03:55:39] "[32mPOST /official/login HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 03:55:39] "GET /official/dashboard HTTP/1.1" 200 -
+127.0.0.1 - - [27/Feb/2026 03:55:39] "[32mPOST /official/toggle_duty HTTP/1.1[0m" 302 -
+127.0.0.1 - - [27/Feb/2026 03:55:39] "GET /official/dashboard HTTP/1.1" 200 -

@@ -212,26 +212,44 @@ def official_toggle_duty():
     status_msg = "EN SERVICIO" if current_user.on_duty else "FUERA DE SERVICIO"
     flash(f'Estado actualizado: {status_msg}')
 
-    if current_user.on_duty:
-        # Notificar a usuarios suscritos
-        subscribed_users = User.query.filter(User.discord_id.isnot(None), User.receive_notifications == True).all()
+    # Notificar a usuarios suscritos (Tanto Entrada como Salida)
+    subscribed_users = User.query.filter(User.discord_id.isnot(None), User.receive_notifications == True).all()
 
-        # En un entorno real, esto debería ser una tarea en segundo plano (Celery/Redis)
-        # para no bloquear la respuesta HTTP si hay muchos usuarios.
-        # Aquí simulamos enviando solo a los primeros 50 para evitar timeouts en este MVP.
-        count = 0
-        link = url_for('main.settings_notifications', _external=True)
+    # En un entorno real, esto debería ser una tarea en segundo plano (Celery/Redis)
+    # para no bloquear la respuesta HTTP si hay muchos usuarios.
+    # Aquí simulamos enviando solo a los primeros 50 para evitar timeouts en este MVP.
+    count = 0
+    link = url_for('main.settings_notifications', _external=True)
+
+    if current_user.on_duty:
         message = (
             f"👮 **{current_user.department}**\n"
             f"El funcionario **{current_user.first_name} {current_user.last_name}** está ahora en servicio.\n\n"
             f"Gestionar notificaciones: {link}"
         )
+    else:
+        message = (
+            f"👮 **{current_user.department}**\n"
+            f"El funcionario **{current_user.first_name} {current_user.last_name}** ha salido de servicio.\n\n"
+            f"Gestionar notificaciones: {link}"
+        )
 
-        for user in subscribed_users[:50]:
-            notify_discord_bot(user, message)
-            count += 1
+    sent_discord_ids = set()
 
-        print(f"Notificación de servicio enviada a {count} usuarios via Discord.")
+    # Iteramos sobre todos los usuarios suscritos (o un limite razonable)
+    # y usamos el set para evitar duplicados si hay usuarios con mismo discord_id
+    for user in subscribed_users:
+        if count >= 50: # Limite de seguridad MVP
+            break
+
+        if user.discord_id in sent_discord_ids:
+            continue
+
+        notify_discord_bot(user, message)
+        sent_discord_ids.add(user.discord_id)
+        count += 1
+
+    print(f"Notificación de servicio ({status_msg}) enviada a {count} usuarios únicos via Discord.")
 
     return redirect(url_for('main.official_dashboard'))
 
