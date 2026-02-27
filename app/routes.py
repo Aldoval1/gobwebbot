@@ -722,6 +722,28 @@ def generate_sabes_report():
     response.headers['Content-Disposition'] = f'attachment; filename=Reporte_SABES_{fecha}.pdf'
     return response
 
+# Data for business licenses
+BUSINESS_LICENSES_STRUCTURE = {
+    '247': {'extra': ['Certificado de Expendio de Sustancias Reguladas (Alcohol y Tabaco)'], 'prices': {'Certificado de Expendio de Sustancias Reguladas (Alcohol y Tabaco)': 3500}},
+    'Pharmacy': {'extra': ['Autorización de Distribución de Artículos Controlados'], 'prices': {'Autorización de Distribución de Artículos Controlados': 3500}},
+    'Mechanic': {'extra': [], 'prices': {}},
+    'Restaurant': {'extra': ['Certificado de Expendio de Sustancias Reguladas (Alcohol y Tabaco)'], 'prices': {'Certificado de Expendio de Sustancias Reguladas (Alcohol y Tabaco)': 3500}},
+    'GasStation': {'extra': [], 'prices': {}},
+    'Club': {'extra': ['Certificado de Expendio de Sustancias Reguladas (Alcohol y Tabaco)', 'Permiso Especial de Operación Nocturna'],
+             'prices': {'Certificado de Expendio de Sustancias Reguladas (Alcohol y Tabaco)': 3500, 'Permiso Especial de Operación Nocturna': 3500}},
+    'Bar': {'extra': ['Certificado de Expendio de Sustancias Reguladas (Alcohol y Tabaco)', 'Permiso Especial de Operación Nocturna'],
+            'prices': {'Certificado de Expendio de Sustancias Reguladas (Alcohol y Tabaco)': 3500, 'Permiso Especial de Operación Nocturna': 3500}},
+    'UsedCars': {'extra': ['Licencia de Comercialización de Autopartes y Motores Usados'], 'prices': {'Licencia de Comercialización de Autopartes y Motores Usados': 3500}},
+    'SexShop': {'extra': [], 'prices': {}},
+    'Groceries': {'extra': [], 'prices': {}},
+    'Hardware': {'extra': [], 'prices': {}},
+    'Barber': {'extra': [], 'prices': {}},
+    'Clothes': {'extra': [], 'prices': {}},
+    'PawnShop': {'extra': [], 'prices': {}}
+}
+BASE_BUSINESS_LICENSE = 'Permiso de Operación Comercial General'
+BASE_BUSINESS_LICENSE_PRICE = 5500
+
 @bp.route('/licenses', methods=['GET', 'POST'])
 @login_required
 def licenses():
@@ -810,7 +832,10 @@ def licenses():
                            active_licenses=user_licenses,
                            pending_debt=pending_debt,
                            pending_breakdown=pending_breakdown,
-                           business_form=business_form)
+                           business_form=business_form,
+                           business_license_structure=BUSINESS_LICENSES_STRUCTURE,
+                           base_license_name=BASE_BUSINESS_LICENSE,
+                           base_license_price=BASE_BUSINESS_LICENSE_PRICE)
 
 @bp.route('/licenses/business/register', methods=['POST'])
 @login_required
@@ -818,21 +843,7 @@ def register_business():
     form = BusinessLicenseForm()
 
     if form.validate_on_submit():
-        extra_license_name = None
-
         b_type = form.business_type.data
-        
-        # Mapa de nombres
-        if b_type == '247':
-            extra_license_name = 'Venta Alcohol y Tabaco'
-        elif b_type == 'Pharmacy':
-            extra_license_name = 'Venta Drogas Farmacas'
-        elif b_type == 'Mechanic':
-            extra_license_name = 'Reparación de Vehículos'
-        elif b_type in ['Restaurant', 'GasStation', 'Club', 'Bar']:
-            extra_license_name = 'Venta Alcohol y Tabaco'
-        elif b_type == 'UsedCars':
-            extra_license_name = 'Venta Vehículos Usados'
         
         # Guardar Foto
         photo_filename = None
@@ -854,30 +865,31 @@ def register_business():
         db.session.commit() # Commit para obtener el ID del negocio
 
         # Crear Licencias vinculadas al negocio
-        # Estado inicial Pendiente
         
-        # 1. Licencia de Funcionamiento (Obligatoria)
-        lic1 = License(
-            type='Licencia de Funcionamiento',
+        # 1. Base License (Required for all)
+        lic_base = License(
+            type=BASE_BUSINESS_LICENSE,
             status='Pendiente',
             issue_date=None,
             expiration_date=None,
             user_id=current_user.id,
             business_id=new_business.id
         )
-        db.session.add(lic1)
+        db.session.add(lic_base)
 
-        # 2. Licencia Extra (si aplica)
-        if extra_license_name:
-            lic2 = License(
-                type=extra_license_name,
-                status='Pendiente',
-                issue_date=None,
-                expiration_date=None,
-                user_id=current_user.id,
-                business_id=new_business.id
-            )
-            db.session.add(lic2)
+        # 2. Specific Licenses based on structure
+        if b_type in BUSINESS_LICENSES_STRUCTURE:
+            extra_licenses = BUSINESS_LICENSES_STRUCTURE[b_type]['extra']
+            for lic_name in extra_licenses:
+                new_lic = License(
+                    type=lic_name,
+                    status='Pendiente',
+                    issue_date=None,
+                    expiration_date=None,
+                    user_id=current_user.id,
+                    business_id=new_business.id
+                )
+                db.session.add(new_lic)
 
         db.session.commit()
         flash(f'Negocio "{form.name.data}" registrado. Licencias pendientes de aprobación por SABES.')
