@@ -42,77 +42,63 @@
             {% endif %}
         {% endwith %}
 
-        <form action="{{ url_for('main.government_users_bulk_action') }}" method="POST" id="bulkForm">
-            <!-- CSRF Protection if enabled globally, assumed yes but let's see if we need token -->
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-
-            <div class="d-flex gap-2 mb-3">
-                <button type="submit" name="action" value="unlink_discord" class="btn btn-warning">
-                    Desvincular Discord
-                </button>
-                <button type="submit" name="action" value="delete" class="btn btn-danger" onclick="return confirm('¿Estás seguro de ELIMINAR PERMANENTEMENTE a los usuarios seleccionados? Esta acción no se puede deshacer.')">
-                    Eliminar Usuarios
-                </button>
-            </div>
-
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th scope="col" style="width: 40px;">
-                                <input type="checkbox" id="selectAll" onclick="toggleSelectAll()">
-                            </th>
-                            <th scope="col">ID</th>
-                            <th scope="col">Nombre</th>
-                            <th scope="col">DNI</th>
-                            <th scope="col">Rol / Dept</th>
-                            <th scope="col">Discord ID</th>
-                            <th scope="col">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>
-                                {% if user.id != current_user.id %}
-                                <input type="checkbox" name="user_ids" value="{{ user.id }}" class="user-checkbox">
-                                {% endif %}
-                            </td>
-                            <td>{{ user.id }}</td>
-                            <td>{{ user.first_name }} {{ user.last_name }}</td>
-                            <td>{{ user.dni }}</td>
-                            <td>
-                                {% if user.badge_id %}
-                                    <span class="badge bg-primary">{{ user.department }}</span>
-                                    <small class="text-muted d-block">{{ user.official_rank }}</small>
-                                {% else %}
-                                    <span class="badge bg-secondary">Ciudadano</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if user.discord_id %}
-                                    <span class="text-success font-monospace">{{ user.discord_id }}</span>
-                                {% else %}
-                                    <span class="text-muted">No vinculado</span>
-                                {% endif %}
-                            </td>
-                            <td>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Nombre</th>
+                        <th scope="col">DNI</th>
+                        <th scope="col">Rol / Dept</th>
+                        <th scope="col">Discord ID</th>
+                        <th scope="col" class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.first_name }} {{ user.last_name }}</td>
+                        <td>{{ user.dni }}</td>
+                        <td>
+                            {% if user.badge_id %}
+                                <span class="badge bg-primary">{{ user.department }}</span>
+                                <small class="text-muted d-block">{{ user.official_rank }}</small>
+                            {% else %}
+                                <span class="badge bg-secondary">Ciudadano</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.discord_id %}
+                                <span class="text-success font-monospace">{{ user.discord_id }}</span>
+                            {% else %}
+                                <span class="text-muted">No vinculado</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <div class="d-flex gap-2 justify-content-end">
                                 <a href="{{ url_for('main.citizen_profile', user_id=user.id) }}" class="btn btn-sm btn-info text-white">Ver Perfil</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </form>
-    </div>
 
-    <script>
-        function toggleSelectAll() {
-            const selectAll = document.getElementById('selectAll');
-            const checkboxes = document.querySelectorAll('.user-checkbox');
-            checkboxes.forEach(cb => cb.checked = selectAll.checked);
-        }
-    </script>
+                                {% if user.discord_id %}
+                                <form action="{{ url_for('main.government_user_unlink', user_id=user.id) }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-sm btn-warning">Desvincular</button>
+                                </form>
+                                {% endif %}
+
+                                {% if user.id != current_user.id %}
+                                <form action="{{ url_for('main.government_user_delete', user_id=user.id) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Estás seguro de ELIMINAR a este usuario? Se borrarán sus datos y registros financieros.')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
