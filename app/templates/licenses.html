@@ -125,35 +125,56 @@
         <div class="tab-content">
             <!-- PANEL LICENCIAS PERSONALES -->
             <div class="tab-pane fade show active" id="personal">
+
+                {% if pending_debt > 0 %}
+                <div class="alert alert-warning mb-4 shadow-sm border-warning">
+                    <h4 class="alert-heading text-danger"><i class="fas fa-exclamation-circle"></i> Deuda Total por Licencias Pendientes: ${{ pending_debt }}</h4>
+                    <p>Por favor, acércate a una oficina de SABES para realizar el pago de las siguientes licencias:</p>
+                    <ul class="list-group list-group-flush bg-transparent">
+                        {% for item in pending_breakdown %}
+                            <li class="list-group-item bg-transparent d-flex justify-content-between align-items-center">
+                                <span>{{ item.type }}</span>
+                                <span class="badge bg-danger rounded-pill">${{ item.price }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
                 <div class="row">
                     <div class="col-md-6">
-                        <h4>Comprar Licencias</h4>
+                        <h4>Solicitar Licencias Personales</h4>
                         <form method="POST">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <div class="list-group mb-3">
-                                {% for key, price in personal_prices.items() %}
+                                {% for key, info in personal_licenses.items() %}
                                 <label class="list-group-item d-flex justify-content-between align-items-center">
                                     <span>
                                         <input class="form-check-input me-1" type="checkbox" name="licenses" value="{{ key }}">
-                                        Licencia de {{ key }}
+                                        {{ info.name }}
                                     </span>
+                                    <span class="badge bg-primary rounded-pill">${{ info.price }}</span>
                                 </label>
                                 {% endfor %}
                             </div>
-                            <button type="submit" class="btn btn-success w-100">Obtener</button>
+                            <button type="submit" class="btn btn-success w-100">Solicitar Licencias</button>
                         </form>
                     </div>
                     <div class="col-md-6">
-                        <h4>Mis Licencias Activas</h4>
+                        <h4>Mis Licencias</h4>
                         {% if active_licenses %}
                             <ul class="list-group">
                             {% for l in active_licenses %}
                                 {% if l.business_id is none %} <!-- Solo mostramos personales aquí -->
                                     <li class="list-group-item d-flex justify-content-between align-items-center">
                                         <div>
-                                            {{ l.type }}
+                                            <strong>{{ l.type }}</strong>
                                             {% if l.status == 'Activa' %}
-                                                <small class="text-muted d-block">Expira: {{ l.expiration_date.strftime('%d/%m') }}</small>
+                                                {% if l.expiration_date %}
+                                                    <small class="text-muted d-block">Expira: {{ l.expiration_date.strftime('%d/%m/%Y') }}</small>
+                                                {% endif %}
+                                            {% elif l.status == 'Pendiente' %}
+                                                <small class="text-danger d-block">Pago pendiente</small>
                                             {% endif %}
                                         </div>
                                         <span class="badge rounded-pill
@@ -169,7 +190,7 @@
                             {% endfor %}
                             </ul>
                         {% else %}
-                            <p class="text-muted">No tienes licencias personales activas.</p>
+                            <p class="text-muted">No tienes licencias personales registradas.</p>
                         {% endif %}
                     </div>
                 </div>
