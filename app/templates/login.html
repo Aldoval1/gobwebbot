@@ -87,6 +87,12 @@
             background-color: #0056b3;
         }
 
+        button:disabled {
+            background-color: #7da5ce;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
         .error {
             color: #e74c3c;
             font-size: 13px;
@@ -142,13 +148,13 @@
                 <a href="{{ url_for('main.logout') }}"><button style="background-color: #dc3545;">Cerrar Sesión</button></a>
                  <a href="{{ url_for('main.citizen_dashboard') }}" style="display:block; margin-top:10px; text-decoration:none; color:#007bff;">Ir al Dashboard</a>
             {% else %}
-                <form method="POST" action="{{ url_for('main.login') }}">
+                <form id="loginForm" method="POST" action="{{ url_for('main.login') }}">
                     {{ form.hidden_tag() }}
                     <div>
-                        {{ form.dni(placeholder="DNI") }}
+                        {{ form.dni(placeholder="DNI", aria_label="Documento Nacional de Identidad") }}
                     </div>
                     <div>
-                        {{ form.password(placeholder="Contraseña") }}
+                        {{ form.password(placeholder="Contraseña", aria_label="Contraseña") }}
                     </div>
                     <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
                         {{ form.remember_me() }} {{ form.remember_me.label }}
@@ -176,5 +182,13 @@
         </div>
     </div>
 
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const btn = this.querySelector('button[type="submit"]');
+            // If the browser fires the submit event, validation passed.
+            btn.disabled = true;
+            btn.innerHTML = 'Iniciando...';
+        });
+    </script>
 </body>
 </html>
