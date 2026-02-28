@@ -86,7 +86,7 @@ class BusinessFine(db.Model):
 
 class License(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    type = db.Column(db.String(100))
+    type = db.Column(db.String(200))
     status = db.Column(db.String(20), default='Pendiente')
     issue_date = db.Column(db.Date, nullable=True)
     expiration_date = db.Column(db.Date, nullable=True)
