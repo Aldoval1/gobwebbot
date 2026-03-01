@@ -90,6 +90,24 @@ with app.app_context():
                     conn.commit()
                 print("✅ Columna 'status' agregada a Business.")
 
+            # Check if license type column needs to be widened
+            try:
+                license_columns = inspector.get_columns('license')
+                for col in license_columns:
+                    if col['name'] == 'type':
+                        # In Postgres, the length might be inside the type object.
+                        # We can attempt a safe ALTER TABLE that works on Postgres and SQLite.
+                        # However, SQLite does not support ALTER COLUMN.
+                        if db.engine.dialect.name == 'postgresql':
+                            # Let's just run it defensively, if it's already 200, this is a no-op or fast.
+                            with db.engine.connect() as conn:
+                                conn.execute(text('ALTER TABLE license ALTER COLUMN type TYPE VARCHAR(200)'))
+                                conn.commit()
+                            print("✅ Columna 'type' en License ajustada a VARCHAR(200).")
+                        break
+            except Exception as inner_e:
+                print(f"⚠️ Could not verify/alter license table: {inner_e}")
+
         except Exception as e:
             print(f"❌ Error en Defensive Migration: {e}")
 
