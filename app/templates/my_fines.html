@@ -124,6 +124,9 @@
             font-size: 28px;
             font-weight: bold;
             cursor: pointer;
+            background: transparent;
+            border: none;
+            padding: 0;
         }
         .btn-close {
             background-color: #3498db;
@@ -182,7 +185,10 @@
                 <button class="btn-report" onclick="openModal()">Reportar</button>
             </li>
             {% else %}
-            <p style="color: #7f8c8d; text-align: center;">¡Felicidades! No tienes multas registradas.</p>
+            <div style="text-align: center; padding: 40px 20px;">
+                <i class="fas fa-check-circle" style="font-size: 48px; color: #27ae60; margin-bottom: 15px;"></i>
+                <p style="color: #7f8c8d; font-size: 18px; margin: 0;">¡Felicidades! No tienes multas registradas.</p>
+            </div>
             {% endfor %}
         </ul>
     </div>
@@ -190,7 +196,7 @@
     <!-- Report Modal -->
     <div id="reportModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
+            <button type="button" class="close" onclick="closeModal()" aria-label="Cerrar modal">&times;</button>
             <i class="fas fa-gavel" style="font-size: 40px; color: #f39c12; margin-bottom: 10px;"></i>
             <h3>Reportar Multa</h3>
             <p>Si consideras que esta multa fue aplicada incorrectamente, por favor solicita una cita en la oficina correspondiente para presentar tu caso.</p>
