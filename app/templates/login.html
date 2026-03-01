@@ -67,6 +67,7 @@
         input[type="text"]:focus, input[type="password"]:focus {
             border-color: #007bff;
             outline: none;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
         }
 
         button {
@@ -145,10 +146,10 @@
                 <form method="POST" action="{{ url_for('main.login') }}">
                     {{ form.hidden_tag() }}
                     <div>
-                        {{ form.dni(placeholder="DNI") }}
+                        {{ form.dni(placeholder="DNI", **{'aria-label': 'DNI', 'autocomplete': 'username'}) }}
                     </div>
                     <div>
-                        {{ form.password(placeholder="Contraseña") }}
+                        {{ form.password(placeholder="Contraseña", **{'aria-label': 'Contraseña', 'autocomplete': 'current-password'}) }}
                     </div>
                     <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
                         {{ form.remember_me() }} {{ form.remember_me.label }}
@@ -166,7 +167,7 @@
 
             {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <div class="error">
+                <div class="error" role="alert" aria-live="polite">
                     {% for message in messages %}
                         <div>{{ message }}</div>
                     {% endfor %}
@@ -176,5 +177,30 @@
         </div>
     </div>
 
+    <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const btn = this.querySelector('button[type="submit"]');
+            if (btn) {
+                // Prevent multiple submissions
+                if (btn.disabled) {
+                    e.preventDefault();
+                    return;
+                }
+                btn.disabled = true;
+                const originalText = btn.innerText;
+                btn.innerText = 'Iniciando...';
+                btn.style.opacity = '0.7';
+                btn.style.cursor = 'wait';
+
+                // Safety timeout in case of server error or client validation failure
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerText = originalText;
+                    btn.style.opacity = '1';
+                    btn.style.cursor = 'pointer';
+                }, 5000);
+            }
+        });
+    </script>
 </body>
 </html>
