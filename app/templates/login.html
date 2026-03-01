@@ -87,6 +87,12 @@
             background-color: #0056b3;
         }
 
+        button:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .error {
             color: #e74c3c;
             font-size: 13px;
@@ -145,10 +151,10 @@
                 <form method="POST" action="{{ url_for('main.login') }}">
                     {{ form.hidden_tag() }}
                     <div>
-                        {{ form.dni(placeholder="DNI") }}
+                        {{ form.dni(placeholder="DNI", **{'aria-label': 'DNI'}) }}
                     </div>
                     <div>
-                        {{ form.password(placeholder="Contraseña") }}
+                        {{ form.password(placeholder="Contraseña", **{'aria-label': 'Contraseña'}) }}
                     </div>
                     <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
                         {{ form.remember_me() }} {{ form.remember_me.label }}
@@ -176,5 +182,24 @@
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const btn = form.querySelector('button[type="submit"]');
+                    if (btn) {
+                        if (btn.disabled) {
+                            e.preventDefault();
+                            return;
+                        }
+                        btn.disabled = true;
+                        btn.innerText = 'Iniciando...';
+                        btn.style.opacity = '0.8';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
