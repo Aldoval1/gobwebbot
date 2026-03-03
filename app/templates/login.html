@@ -142,18 +142,18 @@
                 <a href="{{ url_for('main.logout') }}"><button style="background-color: #dc3545;">Cerrar Sesión</button></a>
                  <a href="{{ url_for('main.citizen_dashboard') }}" style="display:block; margin-top:10px; text-decoration:none; color:#007bff;">Ir al Dashboard</a>
             {% else %}
-                <form method="POST" action="{{ url_for('main.login') }}">
+                <form method="POST" action="{{ url_for('main.login') }}" onsubmit="const btn = this.querySelector('button[type=submit]'); btn.disabled = true; btn.innerText = 'Iniciando...';">
                     {{ form.hidden_tag() }}
                     <div>
-                        {{ form.dni(placeholder="DNI") }}
+                        {{ form.dni(placeholder="DNI", **{'aria-label': 'DNI'}) }}
                     </div>
                     <div>
-                        {{ form.password(placeholder="Contraseña") }}
+                        {{ form.password(placeholder="Contraseña", **{'aria-label': 'Contraseña'}) }}
                     </div>
                     <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
                         {{ form.remember_me() }} {{ form.remember_me.label }}
                     </div>
-                    <button type="submit">Iniciar Sesión</button>
+                    <button type="submit" aria-label="Iniciar Sesión">Iniciar Sesión</button>
                 </form>
 
                 <div class="register-link">
