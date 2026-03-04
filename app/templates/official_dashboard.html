@@ -229,7 +229,7 @@
     <!-- The Modal -->
     <div id="sabesModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close" id="closeSabesModal" role="button" aria-label="Cerrar modal" tabindex="0" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }">&times;</span>
             <h2>Generar Reporte SABES</h2>
             <form action="{{ url_for('main.generate_sabes_report') }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>

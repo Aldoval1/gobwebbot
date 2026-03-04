@@ -274,12 +274,12 @@
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 15px;">
-            <a href="{{ url_for('main.settings_notifications') }}" title="Configuración" style="color: white; font-size: 1.2em; text-decoration: none;">
-                <i class="fas fa-cog"></i>
+            <a href="{{ url_for('main.settings_notifications') }}" aria-label="Configuración de notificaciones" title="Configuración" style="color: white; font-size: 1.2em; text-decoration: none;">
+                <i class="fas fa-cog" aria-hidden="true"></i>
             </a>
             <span style="font-weight: 500; font-size: 1.1em;">{{ current_user.first_name }} {{ current_user.last_name }}</span>
             <a href="{{ url_for('main.logout') }}" class="logout-btn">
-                <i class="fas fa-sign-out-alt"></i> Salir
+                <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Salir
             </a>
         </div>
     </div>
@@ -306,7 +306,7 @@
                 <img src="{{ url_for('static', filename='img/' + current_user.selfie_filename) }}" alt="Foto Perfil" class="user-avatar">
             {% else %}
                 <div class="user-avatar" style="background: #eee; display: flex; align-items: center; justify-content: center; color: #bbb; font-size: 40px;">
-                    <i class="fas fa-user"></i>
+                    <i class="fas fa-user" aria-hidden="true"></i>
                 </div>
             {% endif %}
 
@@ -319,13 +319,13 @@
             <div class="discord-container">
                 {% if current_user.discord_id %}
                     <div class="discord-status-bar discord-linked">
-                        <span class="badge-verified"><i class="fab fa-discord" style="font-size: 1.3em;"></i> Discord Vinculado</span>
+                        <span class="badge-verified"><i class="fab fa-discord" style="font-size: 1.3em;" aria-hidden="true"></i> Discord Vinculado</span>
                         <small style="opacity: 0.8; font-weight: normal;">(ID: {{ current_user.discord_id }})</small>
                     </div>
                 {% else %}
                     <div class="discord-status-bar discord-not-linked">
                         <span style="display: flex; align-items: center; gap: 10px; margin-right: 15px;">
-                            <i class="fab fa-discord" style="font-size: 1.5em;"></i> 
+                            <i class="fab fa-discord" style="font-size: 1.5em;" aria-hidden="true"></i>
                             Activa las notificaciones oficiales
                         </span>
                         <a href="{{ url_for('main.discord_login') }}" class="btn-discord-mini">
@@ -340,31 +340,31 @@
         <div class="dashboard-grid">
             
             <a href="{{ url_for('main.my_documents') }}" class="card-menu border-docs">
-                <i class="fas fa-id-card card-icon" style="color: #3498db;"></i>
+                <i class="fas fa-id-card card-icon" style="color: #3498db;" aria-hidden="true"></i>
                 <span class="card-title">Mis Documentos</span>
                 <span class="card-desc">Ver DNI, Licencias y Antecedentes</span>
             </a>
 
             <a href="{{ url_for('main.my_fines') }}" class="card-menu border-fines">
-                <i class="fas fa-file-invoice-dollar card-icon" style="color: #e74c3c;"></i>
+                <i class="fas fa-file-invoice-dollar card-icon" style="color: #e74c3c;" aria-hidden="true"></i>
                 <span class="card-title">Mis Multas</span>
                 <span class="card-desc">Consultar y pagar infracciones</span>
             </a>
 
             <a href="{{ url_for('main.appointments') }}" class="card-menu border-appts">
-                <i class="fas fa-calendar-check card-icon" style="color: #9b59b6;"></i>
+                <i class="fas fa-calendar-check card-icon" style="color: #9b59b6;" aria-hidden="true"></i>
                 <span class="card-title">Citas Previas</span>
                 <span class="card-desc">Solicitar cita con funcionarios</span>
             </a>
 
             <a href="{{ url_for('main.licenses') }}" class="card-menu border-docs">
-                <i class="fas fa-file-contract card-icon" style="color: #e67e22;"></i>
+                <i class="fas fa-file-contract card-icon" style="color: #e67e22;" aria-hidden="true"></i>
                 <span class="card-title">Licencias</span>
                 <span class="card-desc">Renovar y adquirir licencias</span>
             </a>
 
             <a href="{{ url_for('main.judicial') }}" class="card-menu border-appts">
-                <i class="fas fa-gavel card-icon" style="color: #5865F2;"></i>
+                <i class="fas fa-gavel card-icon" style="color: #5865F2;" aria-hidden="true"></i>
                 <span class="card-title">Judicial</span>
                 <span class="card-desc">Descarga plantillas de demandas y denuncias</span>
             </a>

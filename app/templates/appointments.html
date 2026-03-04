@@ -166,7 +166,7 @@
     <!-- Booking Modal -->
     <div id="bookModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
+            <span class="close" onclick="closeModal()" onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); closeModal(); }" role="button" aria-label="Cerrar modal" tabindex="0">&times;</span>
             <h3>Cita con <span id="officialName"></span></h3>
             <form id="bookForm" method="POST">
                 {{ form.hidden_tag() }}
