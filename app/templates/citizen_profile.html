@@ -293,7 +293,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="bizTitle">Detalles del Negocio</h5>
-                    <button type="button" class="btn-close" onclick="closeModal('businessDetailModal')"></button>
+                    <button type="button" class="btn-close" aria-label="Cerrar modal" onclick="closeModal('businessDetailModal')"></button>
                 </div>
                 <div class="modal-body">
                     <h6 id="bizType" class="text-muted mb-3"></h6>
@@ -321,7 +321,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Registrar Antecedente</h5>
-                    <button type="button" class="btn-close" onclick="closeModal('criminalModal')"></button>
+                    <button type="button" class="btn-close" aria-label="Cerrar modal" onclick="closeModal('criminalModal')"></button>
                 </div>
                 <div class="modal-body">
                     <form action="{{ url_for('main.add_criminal_record', user_id=citizen.id) }}" method="POST" enctype="multipart/form-data">
@@ -346,7 +346,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Imponer Multa</h5>
-                    <button type="button" class="btn-close" onclick="closeModal('fineModal')"></button>
+                    <button type="button" class="btn-close" aria-label="Cerrar modal" onclick="closeModal('fineModal')"></button>
                 </div>
                 <div class="modal-body">
                     <form action="{{ url_for('main.add_traffic_fine', user_id=citizen.id) }}" method="POST">
@@ -390,7 +390,7 @@
        <div class="modal-dialog"><div class="modal-content">
            <div class="modal-header">
                <h5 class="modal-title">Cambiar Contraseña</h5>
-               <button type="button" class="btn-close" onclick="closeModal('changePasswordModal')"></button>
+               <button type="button" class="btn-close" aria-label="Cerrar modal" onclick="closeModal('changePasswordModal')"></button>
            </div>
            <div class="modal-body">
                <form action="{{ url_for('main.change_citizen_password', user_id=citizen.id) }}" method="POST">

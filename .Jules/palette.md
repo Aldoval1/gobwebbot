@@ -1,0 +1,3 @@
+## 2024-05-24 - Add ARIA Labels to Modal Close Buttons
+**Learning:** Found multiple modals across different views (`citizen_profile`, `my_fines`, `official_businesses`, `licenses`, `government_dashboard`, `official_dashboard`, `appointments`) missing proper accessibility attributes for their close buttons. These were implemented as both `<button class="btn-close">` and `<span class="close">`. The `<span class="close">` elements specifically lacked semantic meaning and keyboard focusability.
+**Action:** When implementing new modals or auditing existing ones, ensure modal close controls have `aria-label="Cerrar modal"`. If using `<span>` tags, also add `role="button"` and `tabindex="0"` to make them keyboard accessible and semantically correct for screen readers.
