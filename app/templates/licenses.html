@@ -236,7 +236,7 @@
                                 <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title">Gestionar: {{ bus.name }}</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        <button type="button" class="btn-close" aria-label="Cerrar modal" data-bs-dismiss="modal"></button>
                                     </div>
                                     <div class="modal-body">
                                         <ul class="nav nav-tabs mb-3" id="manageTabs{{ bus.id }}" role="tablist">
@@ -343,7 +343,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Registrar Nuevo Negocio</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" aria-label="Cerrar modal" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form action="{{ url_for('main.register_business') }}" method="POST" enctype="multipart/form-data">
