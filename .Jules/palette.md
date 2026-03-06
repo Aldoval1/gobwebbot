@@ -1,0 +1,3 @@
+## 2026-03-06 - Semantic HTML for Custom Controls
+**Learning:** Found a pattern where interactive custom controls (like map zoom buttons) were built using `<div>` elements with `onclick` handlers. While functional for mouse users, this breaks keyboard navigation and screen reader accessibility. Furthermore, icon-only buttons lacked descriptive labels.
+**Action:** Always replace `<div>` based interactive controls with semantic `<button type="button">`. Ensure icon-only buttons have an `aria-label` and the inner `<i>` tag has `aria-hidden="true"`. Add `:focus-visible` styles to maintain keyboard focus visibility when overriding default button styles.
