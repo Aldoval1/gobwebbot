@@ -145,16 +145,26 @@
                 <form method="POST" action="{{ url_for('main.login') }}">
                     {{ form.hidden_tag() }}
                     <div>
-                        {{ form.dni(placeholder="DNI") }}
+                        {{ form.dni(placeholder="DNI", autofocus=True, **{'aria-label': 'DNI'}) }}
                     </div>
                     <div>
-                        {{ form.password(placeholder="Contraseña") }}
+                        {{ form.password(placeholder="Contraseña", **{'aria-label': 'Contraseña'}) }}
                     </div>
                     <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
                         {{ form.remember_me() }} {{ form.remember_me.label }}
                     </div>
                     <button type="submit">Iniciar Sesión</button>
                 </form>
+
+                <script>
+                    document.querySelector('form').addEventListener('submit', function(e) {
+                        var btn = this.querySelector('button[type="submit"]');
+                        if (btn) {
+                            btn.disabled = true;
+                            btn.innerHTML = 'Iniciando...';
+                        }
+                    });
+                </script>
 
                 <div class="register-link">
                     ¿No tienes una cuenta? <a href="{{ url_for('main.register') }}">Regístrate aquí</a>
