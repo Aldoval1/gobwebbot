@@ -76,6 +76,28 @@
             margin-top: -5px;
             margin-bottom: 10px;
         }
+
+        /* Spinner for loading state */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: text-bottom;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        button:disabled {
+            background-color: #94c1e8;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -86,7 +108,7 @@
 
             <h3>Datos Personales</h3>
             <div>
-                {{ form.first_name(placeholder="Nombre") }}
+                {{ form.first_name(placeholder="Nombre", autofocus=True) }}
                 {% for error in form.first_name.errors %}
                     <div class="error">{{ error }}</div>
                 {% endfor %}
@@ -121,7 +143,7 @@
                 {% endfor %}
             </div>
             <div class="btn-group">
-                <button type="submit">Registrarse</button>
+                <button type="submit" id="submitBtn">Registrarse</button>
             </div>
 
         </form>
@@ -130,5 +152,22 @@
             <a href="{{ url_for('main.index') }}">Ya tengo cuenta</a>
         </div>
     </div>
+
+    <script>
+        document.getElementById('regForm').addEventListener('submit', function(e) {
+            // Prevent double submission is handled by disabling the button
+            var btn = document.getElementById('submitBtn');
+
+            // If already disabled, prevent submit (just in case)
+            if (btn.disabled) {
+                e.preventDefault();
+                return;
+            }
+
+            // Update UI
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span>Registrando...';
+        });
+    </script>
 </body>
 </html>
