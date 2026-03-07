@@ -1,0 +1,4 @@
+
+## 2024-11-20 - Span-based Modals Keyboard and ARIA Deficiencies
+**Learning:** Across the application's Jinja templates, there is a recurring pattern of using `span.close` (`<span class="close">&times;</span>`) to close modals. Unlike native `<button>` tags, `<span>` tags are not inherently keyboard focusable (`tabindex="0"` missing), don't implicitly convey interaction to screen readers (`role="button"` and `aria-label` missing), and do not fire click events automatically on "Enter" or "Space" keypresses.
+**Action:** Always refactor interactive `<span>` elements used as buttons to include `role="button"`, `tabindex="0"`, `aria-label`, visible `:focus-visible` outline styles, and attach `keydown` JavaScript event listeners for standard 'Enter'/'Space' keyboard interaction. Alternatively, swap `<span>` with a semantically correct `<button type="button">`.
