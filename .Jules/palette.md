@@ -1,0 +1,3 @@
+## 2024-05-18 - Semantic Buttons for Map Controls
+**Learning:** Custom interactive elements, such as map zoom controls implemented as `<div>`s with `onclick` handlers, present a major accessibility barrier as they cannot be focused via keyboard or understood by screen readers. Converting these to `<button type="button">` with `aria-label`, `aria-hidden="true"` on internal icons, and ensuring `:focus-visible` styles dramatically improves accessibility while maintaining visual consistency.
+**Action:** When implementing custom interactive controls (like maps, custom dropdowns, tabs), always start with native semantic HTML elements like `<button>` instead of `<div>` or `<span>`, and enforce `:focus-visible` in CSS.
