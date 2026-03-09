@@ -86,6 +86,11 @@
             background-color: #f0f0f0;
         }
 
+        .zoom-btn:focus-visible {
+            outline: 2px solid #007bff;
+            outline-offset: 2px;
+        }
+
         /* Etiqueta de Precio Dinámica */
         .price-badge {
             font-size: 1.2rem;
@@ -379,9 +384,9 @@
                                     
                                     <!-- Controles de Zoom -->
                                     <div class="zoom-controls">
-                                        <div class="zoom-btn" onclick="zoomMap(0.2)"><i class="fas fa-plus"></i></div>
-                                        <div class="zoom-btn" onclick="zoomMap(-0.2)"><i class="fas fa-minus"></i></div>
-                                        <div class="zoom-btn" onclick="resetZoom()"><i class="fas fa-compress"></i></div>
+                                        <button type="button" class="zoom-btn" aria-label="Acercar mapa" onclick="zoomMap(0.2)"><i class="fas fa-plus" aria-hidden="true"></i></button>
+                                        <button type="button" class="zoom-btn" aria-label="Alejar mapa" onclick="zoomMap(-0.2)"><i class="fas fa-minus" aria-hidden="true"></i></button>
+                                        <button type="button" class="zoom-btn" aria-label="Restablecer zoom del mapa" onclick="resetZoom()"><i class="fas fa-compress" aria-hidden="true"></i></button>
                                     </div>
                                 </div>
                                 
