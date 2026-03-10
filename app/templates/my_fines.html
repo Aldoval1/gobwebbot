@@ -125,6 +125,10 @@
             font-weight: bold;
             cursor: pointer;
         }
+        .close:focus-visible {
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
+        }
         .btn-close {
             background-color: #3498db;
             color: white;
@@ -190,8 +194,8 @@
     <!-- Report Modal -->
     <div id="reportModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
-            <i class="fas fa-gavel" style="font-size: 40px; color: #f39c12; margin-bottom: 10px;"></i>
+            <span class="close" onclick="closeModal()" role="button" tabindex="0" aria-label="Cerrar modal">&times;</span>
+            <i class="fas fa-gavel" style="font-size: 40px; color: #f39c12; margin-bottom: 10px;" aria-hidden="true"></i>
             <h3>Reportar Multa</h3>
             <p>Si consideras que esta multa fue aplicada incorrectamente, por favor solicita una cita en la oficina correspondiente para presentar tu caso.</p>
             <button class="btn-close" onclick="closeModal()">Entendido</button>
@@ -210,6 +214,16 @@
                 closeModal();
             }
         }
+
+        // Handle keyboard events for modal close button
+        document.querySelectorAll('.close').forEach(function(el) {
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    closeModal();
+                }
+            });
+        });
     </script>
 </body>
 </html>
