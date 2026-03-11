@@ -145,15 +145,15 @@
                 <form method="POST" action="{{ url_for('main.login') }}">
                     {{ form.hidden_tag() }}
                     <div>
-                        {{ form.dni(placeholder="DNI") }}
+                        {{ form.dni(placeholder="DNI", aria_label="DNI") }}
                     </div>
                     <div>
-                        {{ form.password(placeholder="Contraseña") }}
+                        {{ form.password(placeholder="Contraseña", aria_label="Contraseña") }}
                     </div>
                     <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
                         {{ form.remember_me() }} {{ form.remember_me.label }}
                     </div>
-                    <button type="submit">Iniciar Sesión</button>
+                    <button type="submit" id="submit-btn">Iniciar Sesión</button>
                 </form>
 
                 <div class="register-link">
@@ -176,5 +176,14 @@
         </div>
     </div>
 
+    <script>
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const btn = document.getElementById('submit-btn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = 'Iniciando...';
+            }
+        });
+    </script>
 </body>
 </html>
