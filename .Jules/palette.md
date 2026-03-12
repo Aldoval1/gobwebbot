@@ -1,0 +1,3 @@
+## 2024-05-24 - Semantic map zoom controls
+**Learning:** Custom UI components like map widgets often have generic `<div>` tags acting as buttons. While they may work with mouse clicks via `onclick`, they break keyboard accessibility and are invisible/meaningless to screen readers.
+**Action:** Always replace `<div>` or `<span>` click handlers on interactive components with `<button type="button">`. Ensure they have `aria-label`s for context (especially if they only contain icons), add `aria-hidden="true"` to decorative inner icons, and define `:focus-visible` styles so keyboard users can navigate them properly.
