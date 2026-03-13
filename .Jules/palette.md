@@ -1,0 +1,3 @@
+## 2024-05-24 - Span-based Modal Controls Accessibility
+**Learning:** Using simple `<span>` elements for interactive modal close controls without additional attributes creates significant accessibility barriers. They are completely ignored by keyboard navigation (missing from tab order) and are not announced correctly by screen readers.
+**Action:** When using `<span>` for modal close controls instead of semantic `<button>` elements, always explicitly add `role="button"`, `tabindex="0"`, a descriptive `aria-label` (e.g., "Cerrar modal"), visible focus indicators (`:focus-visible`), and attach keyboard event listeners (handling 'Enter' and 'Space' keys) to ensure parity with native button behavior.
