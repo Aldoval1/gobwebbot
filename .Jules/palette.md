@@ -1,0 +1,3 @@
+## 2026-03-14 - Accessible Span Modals
+**Learning:** In this project, modal close buttons are frequently implemented using semantic-less `<span>` elements (e.g., `<span class="close">&times;</span>`). These spans lack inherent keyboard focusability, semantics, and event listeners for keyboard activation (Enter/Space), breaking accessibility for screen readers and keyboard-only users.
+**Action:** When working with or adding modals in Jinja templates that use `span.close`, ensure they include `role="button"`, `tabindex="0"`, `aria-label="Cerrar modal"`, a `:focus-visible` outline CSS rule, and a JavaScript `keydown` listener to handle 'Enter' and 'Space' activation.
