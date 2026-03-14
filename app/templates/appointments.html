@@ -99,6 +99,11 @@
             font-weight: bold;
             cursor: pointer;
         }
+        .close:focus-visible {
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
         input, textarea, select {
             width: 100%;
             padding: 10px;
@@ -166,7 +171,7 @@
     <!-- Booking Modal -->
     <div id="bookModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeModal()">&times;</span>
+            <span class="close" onclick="closeModal()" role="button" tabindex="0" aria-label="Cerrar modal">&times;</span>
             <h3>Cita con <span id="officialName"></span></h3>
             <form id="bookForm" method="POST">
                 {{ form.hidden_tag() }}
@@ -195,6 +200,14 @@
                 closeModal();
             }
         }
+        document.querySelectorAll('.close').forEach(function(el) {
+            el.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    closeModal();
+                }
+            });
+        });
     </script>
 </body>
 </html>

@@ -108,6 +108,12 @@
             cursor: pointer;
         }
 
+        .close:focus-visible {
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
         .form-group {
             margin-bottom: 15px;
         }
@@ -229,7 +235,7 @@
     <!-- The Modal -->
     <div id="sabesModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close" role="button" tabindex="0" aria-label="Cerrar modal">&times;</span>
             <h2>Generar Reporte SABES</h2>
             <form action="{{ url_for('main.generate_sabes_report') }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -302,6 +308,15 @@
                 modal.style.display = "none";
             }
         }
+
+        document.querySelectorAll('.close').forEach(function(el) {
+            el.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    modal.style.display = "none";
+                }
+            });
+        });
     </script>
 </body>
 </html>
