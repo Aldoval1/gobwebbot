@@ -107,6 +107,10 @@
             text-decoration: none;
             cursor: pointer;
         }
+        .close:focus-visible {
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
+        }
 
         .form-group {
             margin-bottom: 15px;
@@ -229,7 +233,7 @@
     <!-- The Modal -->
     <div id="sabesModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close" role="button" tabindex="0" aria-label="Cerrar modal">&times;</span>
             <h2>Generar Reporte SABES</h2>
             <form action="{{ url_for('main.generate_sabes_report') }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -302,6 +306,14 @@
                 modal.style.display = "none";
             }
         }
+
+        // Add keyboard accessibility for Enter/Space
+        span.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                modal.style.display = "none";
+            }
+        });
     </script>
 </body>
 </html>
