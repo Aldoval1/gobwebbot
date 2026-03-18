@@ -107,6 +107,10 @@
             text-decoration: none;
             cursor: pointer;
         }
+        .close:focus-visible {
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
+        }
 
         .form-group {
             margin-bottom: 15px;
@@ -229,7 +233,7 @@
     <!-- The Modal -->
     <div id="sabesModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
+            <span class="close" role="button" tabindex="0" aria-label="Cerrar modal">&times;</span>
             <h2>Generar Reporte SABES</h2>
             <form action="{{ url_for('main.generate_sabes_report') }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -294,6 +298,14 @@
         // When the user clicks on <span> (x), close the modal
         span.onclick = function() {
             modal.style.display = "none";
+        }
+
+        // Ensure keyboard users can close the modal with Enter/Space
+        span.onkeydown = function(event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                modal.style.display = "none";
+            }
         }
 
         // When the user clicks anywhere outside of the modal, close it

@@ -1,0 +1,3 @@
+## 2024-03-18 - Modal close buttons accessibility
+**Learning:** Found multiple modals across different templates (`my_fines.html`, `appointments.html`, `official_dashboard.html`) using non-interactive `<span class="close">` tags for closing dialogs without proper keyboard accessibility (missing `role="button"`, `tabindex="0"`, `aria-label`, and keyboard event handlers).
+**Action:** Always add `role="button"`, `tabindex="0"`, a descriptive `aria-label`, and a keyboard event listener (for 'Enter' or 'Space') to span-based modal controls to ensure they are accessible to screen readers and keyboard users. Additionally, add an explicit `:focus-visible` outline for visual clarity during keyboard navigation.
