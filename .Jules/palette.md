@@ -1,0 +1,3 @@
+## 2024-05-24 - Accessible Span-based Modal Controls
+**Learning:** Custom modals implemented using `<span>` elements for close buttons are completely inaccessible to keyboard and screen reader users by default, which is a common pattern in this app's older templates.
+**Action:** When creating or fixing custom modal close controls (`<span class="close">&times;</span>`), always add `role="button"`, `tabindex="0"`, `aria-label="Cerrar modal"`, an explicit CSS `:focus-visible` state (`outline: 2px solid #3498db; outline-offset: 2px;`), and a JavaScript `onkeydown` listener to handle 'Enter' and 'Space' keys.
