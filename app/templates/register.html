@@ -86,19 +86,19 @@
 
             <h3>Datos Personales</h3>
             <div>
-                {{ form.first_name(placeholder="Nombre") }}
+                {{ form.first_name(placeholder="Nombre", **{'aria-label': 'Nombre'}) }}
                 {% for error in form.first_name.errors %}
                     <div class="error">{{ error }}</div>
                 {% endfor %}
             </div>
             <div>
-                {{ form.last_name(placeholder="Apellido") }}
+                {{ form.last_name(placeholder="Apellido", **{'aria-label': 'Apellido'}) }}
                 {% for error in form.last_name.errors %}
                     <div class="error">{{ error }}</div>
                 {% endfor %}
             </div>
             <div>
-                {{ form.dni(placeholder="DNI") }}
+                {{ form.dni(placeholder="DNI", **{'aria-label': 'DNI'}) }}
                 {% for error in form.dni.errors %}
                     <div class="error">{{ error }}</div>
                 {% endfor %}
@@ -109,13 +109,13 @@
 
             <h3>Seguridad</h3>
             <div>
-                {{ form.password(placeholder="Contraseña") }}
+                {{ form.password(placeholder="Contraseña", **{'aria-label': 'Contraseña'}) }}
                 {% for error in form.password.errors %}
                     <div class="error">{{ error }}</div>
                 {% endfor %}
             </div>
             <div>
-                {{ form.confirm_password(placeholder="Confirmar Contraseña") }}
+                {{ form.confirm_password(placeholder="Confirmar Contraseña", **{'aria-label': 'Confirmar Contraseña'}) }}
                 {% for error in form.confirm_password.errors %}
                     <div class="error">{{ error }}</div>
                 {% endfor %}
