@@ -128,6 +128,39 @@
             color: #7f8c8d;
         }
 
+        /* Accessibility & UX Enhancements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -142,18 +175,23 @@
                 <a href="{{ url_for('main.logout') }}"><button style="background-color: #dc3545;">Cerrar Sesión</button></a>
                  <a href="{{ url_for('main.citizen_dashboard') }}" style="display:block; margin-top:10px; text-decoration:none; color:#007bff;">Ir al Dashboard</a>
             {% else %}
-                <form method="POST" action="{{ url_for('main.login') }}">
+                <form method="POST" action="{{ url_for('main.login') }}" id="login-form">
                     {{ form.hidden_tag() }}
                     <div>
-                        {{ form.dni(placeholder="DNI") }}
+                        <label for="dni" class="sr-only">DNI</label>
+                        {{ form.dni(placeholder="DNI", id="dni") }}
                     </div>
                     <div>
-                        {{ form.password(placeholder="Contraseña") }}
+                        <label for="password" class="sr-only">Contraseña</label>
+                        {{ form.password(placeholder="Contraseña", id="password") }}
                     </div>
                     <div style="text-align: left; margin: 10px 0; font-size: 13px; color: #555;">
                         {{ form.remember_me() }} {{ form.remember_me.label }}
                     </div>
-                    <button type="submit">Iniciar Sesión</button>
+                    <button type="submit" id="login-btn">
+                        <span class="btn-text">Iniciar Sesión</span>
+                        <div class="spinner"></div>
+                    </button>
                 </form>
 
                 <div class="register-link">
@@ -166,7 +204,7 @@
 
             {% with messages = get_flashed_messages() %}
             {% if messages %}
-                <div class="error">
+                <div class="error" role="alert">
                     {% for message in messages %}
                         <div>{{ message }}</div>
                     {% endfor %}
@@ -176,5 +214,22 @@
         </div>
     </div>
 
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            // Simple check to ensure form is valid before showing spinner
+            // (Browser validation runs first, but this is extra safety)
+            if (this.checkValidity()) {
+                const btn = document.getElementById('login-btn');
+                const text = btn.querySelector('.btn-text');
+                const spinner = btn.querySelector('.spinner');
+
+                if (btn && text && spinner) {
+                    btn.disabled = true;
+                    text.style.display = 'none';
+                    spinner.style.display = 'block';
+                }
+            }
+        });
+    </script>
 </body>
 </html>
